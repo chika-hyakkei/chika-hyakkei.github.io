@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./grim.css";
 
 export const metadata: Metadata = {
   title: "地下百景｜無限ダンジョンRPG",
