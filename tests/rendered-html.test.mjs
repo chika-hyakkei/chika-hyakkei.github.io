@@ -35,4 +35,12 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /坑道商人/);
   assert.match(page, /武器.*防具.*装飾/s);
   assert.match(page, /冒険を諦める/);
+  assert.match(page, /maxDistance/);
+  assert.match(page, /farCells/);
+  assert.match(page, /const discard=/);
+  assert.match(page, /を捨てた/);
+  assert.match(page, /購入後、すぐに装備します/);
+  assert.match(page, /チャリーン/);
+  assert.match(page, /window\.setInterval/);
+  assert.match(page, /species-\$\{run\.battle\.kind%10\}/);
 });
