@@ -43,4 +43,11 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /チャリーン/);
   assert.match(page, /window\.setInterval/);
   assert.match(page, /species-\$\{run\.battle\.kind%10\}/);
+  assert.doesNotMatch(page, /kind:Math\.min\(9/);
+  assert.match(page, /rank=Math\.floor\(floor\/30\)/);
+  assert.match(page, /baseName.*＋\$\{rank\}/);
+  assert.match(page, /tempo=run\.phase==="battle"\?132:235/);
+  assert.match(page, /const list=gear\.filter\(g=>g\.kind===kind\)\.sort/);
+  assert.match(page, /forge=Math\.floor\(run\.floor\/20\)/);
+  assert.match(page, /variant-\$\{Math\.floor\(run\.floor\/30\)%4\}/);
 });
