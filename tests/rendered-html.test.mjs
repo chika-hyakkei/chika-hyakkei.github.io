@@ -2,17 +2,52 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("implements the confirmed hundred-floor tactical loop", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  for (const text of ["25", "variants", "100 FLOORS", "bossNames", "百景の底・虚無王", "敵の次行動", "防御", "毒", "出血", "呪い", "暗闇", "麻痺", "Math.max(18,Math.ceil(s.hp*.45))", "potions>=3", "floor%3===0", "図鑑", "熟練", "墓データ", "地下依頼"]) assert.ok(page.includes(text), `missing ${text}`);
-  assert.match(page, /phase:final\?"ending"/);
-  assert.match(page, /r\.enemies\.length\)return/);
+async function render() {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  return worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), {
+    ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+  }, { waitUntil() {}, passThroughOnException() {} });
+}
+
+test("server-renders the Chika Hyakkei title screen", async () => {
+  const response = await render();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+  const html = await response.text();
+  assert.match(html, /<html lang="ja">/);
+  assert.match(html, /<title>地下百景｜無限ダンジョンRPG<\/title>/);
+  assert.match(html, /倒れればすべてを失う無料レトロRPG/);
+  assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 });
 
-test("keeps potion and shop constraints explicit", async () => {
+test("ships the complete roguelike loop", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(page, /potions:1/);
-  assert.match(page, /potions>=3/);
-  assert.match(page, /12\+\(\(r\.floor\/3\|0\)%4\)\*12/);
-  assert.match(page, /回復薬は一店につき1個/);
+  for (const text of ["戦士","盗賊","僧侶","魔法使い","騎士","賢者","強打","盗む","治療","火球","盾打ち","雷撃"]) assert.match(page, new RegExp(text));
+  assert.match(page, /const W = 13, H = 11/);
+  assert.match(page, /function generateFloor/);
+  assert.match(page, /10&&!unlocked\.includes\("knight"\)/);
+  assert.match(page, /20&&!unlocked\.includes\("sage"\)/);
+  assert.match(page, /chika-hyakkei-run-v1/);
+  assert.match(page, /localStorage\.removeItem\(RUN_KEY\)/);
+  assert.match(page, /帰還の碑/);
+  assert.match(page, /坑道商人/);
+  assert.match(page, /武器.*防具.*装飾/s);
+  assert.match(page, /冒険を諦める/);
+  assert.match(page, /maxDistance/);
+  assert.match(page, /farCells/);
+  assert.match(page, /const discard=/);
+  assert.match(page, /を捨てた/);
+  assert.match(page, /購入後、すぐに装備します/);
+  assert.match(page, /チャリーン/);
+  assert.match(page, /window\.setInterval/);
+  assert.match(page, /species-\$\{run\.battle\.kind%10\}/);
+  assert.doesNotMatch(page, /kind:Math\.min\(9/);
+  assert.match(page, /rank=Math\.floor\(floor\/30\)/);
+  assert.match(page, /baseName.*＋\$\{rank\}/);
+  assert.match(page, /tempo=run\.phase==="battle"\?132:235/);
+  assert.match(page, /const list=gear\.filter\(g=>g\.kind===kind\)\.sort/);
+  assert.match(page, /forge=Math\.floor\(run\.floor\/20\)/);
+  assert.match(page, /variant-\$\{Math\.floor\(run\.floor\/30\)%4\}/);
 });
