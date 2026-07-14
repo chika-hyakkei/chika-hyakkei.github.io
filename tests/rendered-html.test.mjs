@@ -29,7 +29,7 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /function generateFloor/);
   assert.match(page, /10&&!unlocked\.includes\("knight"\)/);
   assert.match(page, /20&&!unlocked\.includes\("sage"\)/);
-  assert.match(page, /chika-hyakkei-run-v1/);
+  assert.match(page, /chika-hyakkei-run-v3/);
   assert.match(page, /localStorage\.removeItem\(RUN_KEY\)/);
   assert.match(page, /帰還の碑/);
   assert.match(page, /坑道商人/);

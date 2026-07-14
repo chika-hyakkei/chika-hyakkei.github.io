@@ -24,8 +24,7 @@ type Run = {
 type Meta = { bestFloor: number; bestScore: number; totalKills: number; unlocked: JobKey[]; jobBest: Partial<Record<JobKey, number>> };
 type Result = { reason: "dead" | "return" | "abandon"; floor: number; score: number; kills: number; bosses: number; unlocked: JobKey[] };
 
-const RUN_KEY = "chika-hyakkei-run-v2";
-const LEGACY_RUN_KEY = "chika-hyakkei-run-v1";
+const RUN_KEY = "chika-hyakkei-run-v3";
 const META_KEY = "chika-hyakkei-meta-v2";
 const LEGACY_META_KEY = "chika-hyakkei-meta-v1";
 const W = 13, H = 11;
@@ -99,7 +98,7 @@ function score(run:Run){return run.floor*1000+run.kills*100+run.totalGold*2+run.
 export default function Home(){
   const [meta,setMeta]=useState<Meta>(defaultMeta); const [run,setRun]=useState<Run|null>(null); const [result,setResult]=useState<Result|null>(null);
   const [name,setName]=useState(""); const [job,setJob]=useState<JobKey>("warrior"); const [ready,setReady]=useState(false); const [muted,setMuted]=useState(false); const [pendingPurchase,setPendingPurchase]=useState<Gear|"potion"|null>(null); const [battleFx,setBattleFx]=useState<BattleFx>(""); const audio=useRef<AudioContext|null>(null);
-  useEffect(()=>{try{const m=localStorage.getItem(META_KEY)??localStorage.getItem(LEGACY_META_KEY),r=localStorage.getItem(RUN_KEY)??localStorage.getItem(LEGACY_RUN_KEY);if(m)setMeta({...defaultMeta,...JSON.parse(m)});if(r){const saved=JSON.parse(r) as Run;setRun({...saved,bombs:saved.bombs??0,combo:saved.combo??0,shopPotionAvailable:saved.shopPotionAvailable??true,statuses:saved.statuses??[],battle:saved.battle?{...saved.battle,intent:saved.battle.intent??"attack",turn:saved.battle.turn??0}:null});}}catch{}setReady(true);},[]);
+  useEffect(()=>{try{const m=localStorage.getItem(META_KEY)??localStorage.getItem(LEGACY_META_KEY),r=localStorage.getItem(RUN_KEY);if(m)setMeta({...defaultMeta,...JSON.parse(m)});if(r){const saved=JSON.parse(r) as Run;setRun({...saved,bombs:saved.bombs??0,combo:saved.combo??0,shopPotionAvailable:saved.shopPotionAvailable??true,statuses:saved.statuses??[],battle:saved.battle?{...saved.battle,intent:saved.battle.intent??"attack",turn:saved.battle.turn??0}:null});}}catch{}setReady(true);},[]);
   useEffect(()=>{if(ready)localStorage.setItem(META_KEY,JSON.stringify(meta));},[meta,ready]); useEffect(()=>{if(!ready)return;if(run)localStorage.setItem(RUN_KEY,JSON.stringify(run));else localStorage.removeItem(RUN_KEY);},[run,ready]);
   const beep=useCallback((f=440,d=.06,volume=.02,type:OscillatorType="square")=>{if(muted)return;const C=window.AudioContext||(window as typeof window&{webkitAudioContext:typeof AudioContext}).webkitAudioContext;const c=audio.current??new C();audio.current=c;void c.resume();const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(volume,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d);},[muted]);
   const triggerFx=useCallback((fx:BattleFx)=>{setBattleFx(fx);window.setTimeout(()=>setBattleFx(""),fx==="vanish"?420:260);},[]);
