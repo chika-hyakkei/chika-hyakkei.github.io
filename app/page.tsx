@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BOSS_MONSTERS, MONSTER_CATALOG, monsterNameFor } from "./monsters";
 
 type JobKey = "warrior" | "thief" | "priest" | "mage" | "knight" | "sage";
 type Phase = "explore" | "battle" | "shop" | "bossChoice";
@@ -14,21 +15,21 @@ type BattleFx = "" | "slash" | "magic" | "heal" | "blast" | "vanish";
 type Gear = { id: string; name: string; kind: GearKind; tier: number; price: number; atk?: number; def?: number; hp?: number; mp?: number };
 type OwnedGear = Gear & { uid: number };
 type DungeonEnemy = { id: number; x: number; y: number; kind: number; boss: boolean };
-type BattleEnemy = DungeonEnemy & { name: string; hp: number; maxHp: number; atk: number; def: number; gold: number; exp: number; intent: EnemyIntent; turn: number };
+type BattleEnemy = DungeonEnemy & { name: string; catalogId: string; hp: number; maxHp: number; atk: number; def: number; gold: number; exp: number; intent: EnemyIntent; turn: number };
 type Run = {
   name: string; job: JobKey; phase: Phase; floor: number; level: number; exp: number; hp: number; mp: number;
   gold: number; totalGold: number; kills: number; bosses: number; seed: number; nextUid: number; map: Tile[][]; seen: boolean[][];
   player: Point; enemies: DungeonEnemy[]; opened: number[]; inventory: OwnedGear[]; equipment: Record<GearKind, OwnedGear | null>;
   potions: number; bombs: number; combo: number; shopPotionAvailable: boolean; battle: BattleEnemy | null; guard: number; statuses: Status[]; message: string;
 };
-type Meta = { bestFloor: number; bestScore: number; totalKills: number; unlocked: JobKey[]; jobBest: Partial<Record<JobKey, number>> };
+type Meta = { bestFloor: number; bestScore: number; totalKills: number; unlocked: JobKey[]; jobBest: Partial<Record<JobKey, number>>; bestiary: Record<string,number> };
 type Result = { reason: "dead" | "return" | "abandon"; floor: number; score: number; kills: number; bosses: number; unlocked: JobKey[] };
 
 const RUN_KEY = "chika-hyakkei-run-v3";
 const META_KEY = "chika-hyakkei-meta-v2";
 const LEGACY_META_KEY = "chika-hyakkei-meta-v1";
 const W = 13, H = 11;
-const defaultMeta: Meta = { bestFloor: 0, bestScore: 0, totalKills: 0, unlocked: ["warrior", "thief", "priest", "mage"], jobBest: {} };
+const defaultMeta: Meta = { bestFloor: 0, bestScore: 0, totalKills: 0, unlocked: ["warrior", "thief", "priest", "mage"], jobBest: {}, bestiary: {} };
 
 const JOBS: Record<JobKey, { name: string; mark: string; desc: string; hp: number; mp: number; atk: number; def: number; skills: [string, string] }> = {
   warrior: { name: "戦士", mark: "剣", desc: "高い体力と一撃の重さ", hp: 30, mp: 7, atk: 7, def: 4, skills: ["強打", "防御"] },
@@ -53,8 +54,6 @@ const gear: Gear[] = [
   ...ACCESSORIES.map((name, i) => ({ id:`x${i+1}`, name, kind:"accessory" as GearKind, tier:i+1, price:25+(i+1)*20, atk:i%3===0?2+i:0, def:i%3===1?2+Math.floor(i/2):0, hp:i%3===2?8+i*2:0, mp:i%2===0?3+i:0 })),
 ];
 
-const ENEMIES = ["洞ミミズ","苔スライム","骨ネズミ","夜コウモリ","穴ゴブリン","岩トカゲ","亡者の鎧","火喰い虫","影オオカミ","深層の目"];
-const BOSSES = ["百足の坑王","石冠の巨人","深淵の古竜"];
 const INTENTS: Record<EnemyIntent, { label: string; detail: string; multiplier: number }> = {
   attack: { label: "攻撃", detail: "通常攻撃。防御で軽減できる", multiplier: 1 },
   heavy: { label: "強攻撃", detail: "大ダメージ。防御推奨", multiplier: 1.65 },
@@ -79,8 +78,8 @@ function generateFloor(floor: number, inputSeed: number) {
   const floors:Point[]=[]; for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(map[y][x]==="."&&!(x===player.x&&y===player.y))floors.push({x,y}); floors.sort(()=>rand()-.5);
   const chestCount=1+Math.floor(rand()*3); const opened:number[]=[]; for(let i=0;i<chestCount;i++){const p=floors.pop();if(p)map[p.y][p.x]="$";}
   if(floor%3===0){const p=floors.pop();if(p)map[p.y][p.x]="S";}
-  const enemies:DungeonEnemy[]=[]; const count=3+Math.floor(rand()*3); for(let i=0;i<count;i++){const p=floors.pop();if(p)enemies.push({id:i+1,x:p.x,y:p.y,kind:Math.floor((floor-1)/2)+Math.floor(rand()*3),boss:false});}
-  if(floor%10===0) enemies.push({id:99,x:stairs.x,y:stairs.y,kind:Math.floor(floor/10-1)%3,boss:true});
+  const enemies:DungeonEnemy[]=[]; const count=3+Math.floor(rand()*3); for(let i=0;i<count;i++){const p=floors.pop();if(p)enemies.push({id:i+1,x:p.x,y:p.y,kind:Math.floor((floor-1)/4)+Math.floor(rand()*4),boss:false});}
+  if(floor%10===0) enemies.push({id:99,x:stairs.x,y:stairs.y,kind:Math.floor(floor/10-1),boss:true});
   const seen=Array.from({length:H},()=>Array(W).fill(false)); reveal(seen,player);
   return {map,seen,player,enemies,opened,seed};
 }
@@ -92,12 +91,17 @@ const statusDamage=(statuses:Status[])=>statuses.reduce((total,s)=>total+(s.kind
 const statusText=(statuses:Status[])=>statuses.length?` 現在：${statuses.map(s=>`${statusName[s.kind]} ${s.turns}T`).join("・")}。`:"";
 
 function stats(run:Run){ const j=JOBS[run.job], eq=Object.values(run.equipment).filter(Boolean) as OwnedGear[]; return {maxHp:j.hp+(run.level-1)*5+eq.reduce((s,g)=>s+(g.hp||0),0),maxMp:j.mp+(run.level-1)*2+eq.reduce((s,g)=>s+(g.mp||0),0),atk:j.atk+(run.level-1)*2+eq.reduce((s,g)=>s+(g.atk||0),0),def:j.def+(run.level-1)+eq.reduce((s,g)=>s+(g.def||0),0)};}
-function enemyFor(e:DungeonEnemy,floor:number):BattleEnemy{const scale=floor+(e.boss?9:e.kind*.35),rank=Math.floor(floor/30),boost=(1+rank*.22)*(1+Math.max(0,floor-25)*.007);const baseName=e.boss?BOSSES[e.kind%BOSSES.length]:ENEMIES[e.kind%ENEMIES.length],name=`${baseName}${rank?`＋${rank}`:""}`;const hp=Math.floor(((e.boss?55:13)+scale*(e.boss?8.5:3.7))*boost);return{...e,name,hp,maxHp:hp,atk:Math.floor(((e.boss?7:4)+scale*(e.boss?2.15:1.45))*boost),def:Math.floor(scale/(e.boss?2.5:3.2)*boost),gold:Math.floor(((e.boss?50:7)+scale*3.5)*boost),exp:Math.floor(((e.boss?32:8)+scale*3.4)*boost),intent:intentFor(floor*7919+e.id,e.boss,0,floor),turn:0};}
+function enemyFor(e:DungeonEnemy,floor:number):BattleEnemy{const scale=floor+(e.boss?9:e.kind*.35),rank=Math.floor(floor/30),boost=(1+rank*.22)*(1+Math.max(0,floor-25)*.007),catalogId=`m${String((Math.abs(e.kind*4+Math.floor(floor/25))%100)+1).padStart(3,"0")}`;const baseName=e.boss?BOSS_MONSTERS[e.kind%BOSS_MONSTERS.length]:monsterNameFor(e.kind*4+Math.floor(floor/25)),name=`${baseName}${rank?`＋${rank}`:""}`;const hp=Math.floor(((e.boss?55:13)+scale*(e.boss?8.5:3.7))*boost);return{...e,name,catalogId,hp,maxHp:hp,atk:Math.floor(((e.boss?7:4)+scale*(e.boss?2.15:1.45))*boost),def:Math.floor(scale/(e.boss?2.5:3.2)*boost),gold:Math.floor(((e.boss?50:7)+scale*3.5)*boost),exp:Math.floor(((e.boss?32:8)+scale*3.4)*boost),intent:intentFor(floor*7919+e.id,e.boss,0,floor),turn:0};}
 function score(run:Run){return run.floor*1000+run.kills*100+run.totalGold*2+run.bosses*2500;}
+
+function Bestiary({ meta, onClose }: { meta: Meta; onClose: () => void }) {
+  const discovered = Object.values(meta.bestiary).filter(Boolean).length;
+  return <div className="overlay bestiary-overlay"><section className="modal bestiary"><button className="bestiary-close" onClick={onClose}>閉じる</button><span className="modal-kicker">MONSTER ARCHIVE</span><h2>魔物図鑑 <small>{discovered}/100</small></h2><div className="bestiary-grid">{MONSTER_CATALOG.map((monster,index)=>{const kills=meta.bestiary[monster.id]??0;return <article key={monster.id} className={kills?"found":"unknown"}><span className={`archive-monster species-${index%10} variant-${Math.floor(index/25)} `}><i/><i/><i/></span>{kills?<><b>{monster.name}</b><small>{monster.floor}・弱点：{monster.weakness}</small><em>{monster.action} ／ 討伐 {kills}</em></>:<><b>？？？？？</b><small>未討伐</small></>}</article>})}</div></section></div>;
+}
 
 export default function Home(){
   const [meta,setMeta]=useState<Meta>(defaultMeta); const [run,setRun]=useState<Run|null>(null); const [result,setResult]=useState<Result|null>(null);
-  const [name,setName]=useState(""); const [job,setJob]=useState<JobKey>("warrior"); const [ready,setReady]=useState(false); const [muted,setMuted]=useState(false); const [pendingPurchase,setPendingPurchase]=useState<Gear|"potion"|null>(null); const [battleFx,setBattleFx]=useState<BattleFx>(""); const audio=useRef<AudioContext|null>(null);
+  const [name,setName]=useState(""); const [job,setJob]=useState<JobKey>("warrior"); const [ready,setReady]=useState(false); const [muted,setMuted]=useState(false); const [pendingPurchase,setPendingPurchase]=useState<Gear|"potion"|null>(null); const [battleFx,setBattleFx]=useState<BattleFx>(""); const [showBestiary,setShowBestiary]=useState(false); const audio=useRef<AudioContext|null>(null);
   useEffect(()=>{try{const m=localStorage.getItem(META_KEY)??localStorage.getItem(LEGACY_META_KEY),r=localStorage.getItem(RUN_KEY);if(m)setMeta({...defaultMeta,...JSON.parse(m)});if(r){const saved=JSON.parse(r) as Run;setRun({...saved,bombs:saved.bombs??0,combo:saved.combo??0,shopPotionAvailable:saved.shopPotionAvailable??true,statuses:saved.statuses??[],battle:saved.battle?{...saved.battle,intent:saved.battle.intent??"attack",turn:saved.battle.turn??0}:null});}}catch{}setReady(true);},[]);
   useEffect(()=>{if(ready)localStorage.setItem(META_KEY,JSON.stringify(meta));},[meta,ready]); useEffect(()=>{if(!ready)return;if(run)localStorage.setItem(RUN_KEY,JSON.stringify(run));else localStorage.removeItem(RUN_KEY);},[run,ready]);
   const beep=useCallback((f=440,d=.06,volume=.02,type:OscillatorType="square")=>{if(muted)return;const C=window.AudioContext||(window as typeof window&{webkitAudioContext:typeof AudioContext}).webkitAudioContext;const c=audio.current??new C();audio.current=c;void c.resume();const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(volume,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d);},[muted]);
@@ -129,7 +133,7 @@ export default function Home(){
     if(hp<=0){setTimeout(()=>finish("dead",{...g,hp:0,battle:advanced}),0);return{...g,hp:0,message:`${message} ${b.name}の${current.label}で倒れた……`};}
     return{...g,hp,statuses,battle:advanced,guard:0,message:`${message}${curedText} ${b.name}の${current.label}、${dmg}の傷。${dot?` ${dot}の継続ダメージ。`:""} 次は${INTENTS[nextIntent].label}。${statusText(statuses)}`};
   };
-  const win=(g:Run,b:BattleEnemy)=>{triggerFx("vanish");victorySfx();const exp=g.exp+b.exp;let level=g.level;let remain=exp;let hp=g.hp,mp=g.mp;while(remain>=level*12){remain-=level*12;level++;hp+=5;mp+=2;}const bosses=g.bosses+(b.boss?1:0),combo=g.combo+1,echo=combo%3===0;const echoHeal=echo?Math.ceil(stats(g).maxHp*.15):0;hp=Math.min(stats(g).maxHp,hp+echoHeal);const gotBomb=echo&&g.bombs<2;const next={...g,phase:(b.boss?"bossChoice":"explore") as Phase,battle:null,enemies:g.enemies.filter(e=>e.id!==b.id),gold:g.gold+b.gold,totalGold:g.totalGold+b.gold,kills:g.kills+1,bosses,combo,bombs:gotBomb?g.bombs+1:g.bombs,level,exp:remain,hp,mp,message:`${b.name}を倒した！ ${b.gold}Gを得た。${echo?` 魂火連鎖！ HPを${echoHeal}回復${gotBomb?"、爆裂石を得た":""}。`:""}${level>g.level?` レベル${level}へ！`:""}`};return next;};
+  const win=(g:Run,b:BattleEnemy)=>{triggerFx("vanish");victorySfx();if(!b.boss)setMeta(current=>({...current,bestiary:{...current.bestiary,[b.catalogId]:(current.bestiary[b.catalogId]??0)+1}}));const exp=g.exp+b.exp;let level=g.level;let remain=exp;let hp=g.hp,mp=g.mp;while(remain>=level*12){remain-=level*12;level++;hp+=5;mp+=2;}const bosses=g.bosses+(b.boss?1:0),combo=g.combo+1,echo=combo%3===0;const echoHeal=echo?Math.ceil(stats(g).maxHp*.15):0;hp=Math.min(stats(g).maxHp,hp+echoHeal);const gotBomb=echo&&g.bombs<2;const next={...g,phase:(b.boss?"bossChoice":"explore") as Phase,battle:null,enemies:g.enemies.filter(e=>e.id!==b.id),gold:g.gold+b.gold,totalGold:g.totalGold+b.gold,kills:g.kills+1,bosses,combo,bombs:gotBomb?g.bombs+1:g.bombs,level,exp:remain,hp,mp,message:`${b.name}を倒した！ ${b.gold}Gを得た。${echo?` 魂火連鎖！ HPを${echoHeal}回復${gotBomb?"、爆裂石を得た":""}。`:""}${level>g.level?` レベル${level}へ！`:""}`};return next;};
   const battleAction=(mode:"attack"|"guard"|"skill1"|"skill2"|"potion"|"bomb"|"flee")=>{if(mode==="attack"){beep(125,.06,.04,"sawtooth");setTimeout(()=>beep(70,.1,.035,"square"),42);}else if(mode==="guard"){beep(105,.1,.025,"square");}else if(mode==="skill1"||mode==="skill2"){beep(147,.08,.038,"sawtooth");setTimeout(()=>beep(104,.1,.03,"square"),55);setTimeout(()=>beep(73,.15,.025,"sawtooth"),110);}else if(mode==="potion"){beep(196,.09,.025,"triangle");setTimeout(()=>beep(165,.14,.022,"square"),75);}else if(mode==="bomb"){beep(82,.14,.05,"sawtooth");setTimeout(()=>beep(46,.22,.04,"square"),70);}else beep(75,.14,.03,"sawtooth");setRun(g=>{if(!g||g.phase!=="battle"||!g.battle)return g;let b={...g.battle},next={...g},message="";const st=stats(g);let [r,seed]=nextRandom(g.seed);next.seed=seed;if(mode==="guard"){next.guard=.4;return enemyRetaliates(next,b,"防御の構え。");}if(mode==="potion"){if(g.potions<=0)return{...g,message:"回復薬を持っていない。"};const heal=Math.min(Math.max(18,Math.ceil(st.maxHp*.45)),st.maxHp-g.hp);next.potions--;next.hp+=heal;return enemyRetaliates(next,b,`回復薬でHPを${heal}回復した。`);}if(mode==="bomb"){if(g.bombs<=0)return{...g,message:"爆裂石を持っていない。"};next.bombs--;const damage=Math.max(24,Math.ceil(b.maxHp*.38)+g.floor);b.hp-=damage;if(b.hp<=0)return win(next,b);return enemyRetaliates(next,b,`爆裂石が砕け、${damage}の傷を与えた！`);}if(mode==="flee"){if(b.boss)return{...g,message:"階層主からは逃げられない！"};if(r<.65+(g.job==="thief"?.2:0))return{...g,phase:"explore",battle:null,message:"闇へ身を隠し、逃げ切った。"};return enemyRetaliates(next,b,"逃げ道を塞がれた！");}
     let damage=0,skip=false;if(mode==="attack"){damage=Math.max(1,st.atk-b.def+Math.floor(r*4));message=`${g.name}の攻撃。${damage}の傷を与えた。`;}else{const which=mode==="skill1"?0:1;const costs:Record<JobKey,[number,number]>={warrior:[3,2],thief:[3,3],priest:[4,3],mage:[4,5],knight:[3,3],sage:[5,6]};const cost=costs[g.job][which];if(g.mp<cost)return{...g,message:"MPが足りない。"};next.mp-=cost;if(g.job==="warrior"){if(which===0){damage=Math.max(1,Math.floor(st.atk*1.8)-b.def);message=`強打！ ${damage}の傷。`;}else{next.guard=.35;message="盾を構え、次の攻撃に備えた。";}}if(g.job==="thief"){if(which===0){damage=Math.max(2,Math.floor(st.atk*1.45)-b.def);message=`連撃！ ${damage}の傷。`;}else{const gain=4+g.floor;next.gold+=gain;next.totalGold+=gain;message=`${gain}Gを盗んだ。`;}}if(g.job==="priest"){if(which===0){const heal=Math.min(12+g.level*3,st.maxHp-g.hp);next.hp+=heal;message=`治療の祈り。HPが${heal}回復。`;}else{next.guard=.3;message="守りの祈りが身を包む。";}}if(g.job==="mage"){damage=which===0?10+g.level*4:7+g.level*3;skip=which===1&&r<.45;message=which===0?`火球が弾け、${damage}の傷！`:`氷結が走り、${damage}の傷！`; }if(g.job==="knight"){if(which===0){damage=Math.max(2,Math.floor(st.atk*1.4)-b.def);skip=r<.3;message=`盾打ち！ ${damage}の傷。`;}else{next.guard=.2;message="鉄壁の構えを取った。";}}if(g.job==="sage"){if(which===0){const heal=Math.min(20+g.level*4,st.maxHp-g.hp);next.hp+=heal;message=`大治療。HPが${heal}回復。`;}else{damage=14+g.level*5;message=`雷撃が落ち、${damage}の傷！`;}}}
     b.hp-=damage;if(b.hp<=0)return win(next,b);return enemyRetaliates(next,b,message,skip);});};
@@ -169,6 +173,7 @@ export default function Home(){
       {run.phase==="shop"&&<div className="overlay"><div className="modal shop"><span className="modal-kicker">SAFE ROOM</span><h2>坑道商人</h2><p>「金貨は命より軽い。使えるうちに使いな」</p><div className="shop-message">◆ {run.message}</div><div className="wares">{offers.map(i=><button key={i.id} onClick={()=>setPendingPurchase(i)}><span>{i.name}<small>{i.kind==="weapon"?`攻撃 +${i.atk}`:i.kind==="armor"?`守備 +${i.def}`:"複数能力"}</small></span><b>{i.price}G</b></button>)}<button disabled={!run.shopPotionAvailable||run.potions>=3} onClick={()=>setPendingPurchase("potion")}><span>回復薬<small>{run.shopPotionAvailable?`所持 ${run.potions}/3・在庫1`:"売り切れ"}</small></span><b>{potionPrice}G</b></button></div>{pendingPurchase&&<div className="purchase-confirm"><strong>{pendingPurchase==="potion"?"回復薬":pendingPurchase.name}を買いますか？</strong><small>{pendingPurchase==="potion"?"最大HPの45%（最低18HP）回復。戦闘中に使うと反撃を受けます。":"購入後、すぐに装備します。今の装備は持ち物へ移ります。"}</small><div><button className="primary" onClick={purchase}>はい・買う</button><button onClick={()=>setPendingPurchase(null)}>いいえ</button></div></div>}<button className="primary" onClick={()=>{setPendingPurchase(null);setRun(g=>g?{...g,phase:"explore",message:"買い物を終え、暗闇へ戻った。"}:g)}}>探索へ戻る</button></div></div>}
       {run.phase==="bossChoice"&&<div className="overlay"><div className="modal choice"><span className="modal-kicker">MILESTONE</span><h2>帰還の碑</h2><p>ここまでの記録を刻み、地上へ帰ることができる。<br/>その先にも、階段は続いている。</p><button className="primary" onClick={()=>finish("return")}>地上へ帰還する</button><button onClick={()=>setRun(g=>g?enterFloor(g,g.floor+1):g)}>さらに深く潜る</button></div></div>}
     </>}
-    <footer>移動：矢印キー / WASD / 画面の十字キー　・　冒険中は自動保存</footer>
+    <footer>移動：矢印キー / WASD / 画面の十字キー　・　冒険中は自動保存　<button onClick={()=>setShowBestiary(true)}>魔物図鑑 {Object.values(meta.bestiary).filter(Boolean).length}/100</button></footer>
+    {showBestiary&&<Bestiary meta={meta} onClose={()=>setShowBestiary(false)}/>} 
   </main>;
 }

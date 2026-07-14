@@ -58,3 +58,10 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /shopPotionAvailable:false/);
   assert.match(page, /Math\.min\(48,12\+/);
 });
+
+test("defines the hundred-monster catalog", async () => {
+  const monsters = await readFile(new URL("../app/monsters.ts", import.meta.url), "utf8");
+  assert.match(monsters, /bases\.flatMap/);
+  assert.match(monsters, /\["通常",""\].*\["凶暴","狂"\].*\["呪染","呪"\].*\["深淵","深"\]/s);
+  assert.match(monsters, /"百景の底王"/);
+});
