@@ -50,4 +50,11 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /const list=gear\.filter\(g=>g\.kind===kind\)\.sort/);
   assert.match(page, /forge=Math\.floor\(run\.floor\/20\)/);
   assert.match(page, /variant-\$\{Math\.floor\(run\.floor\/30\)%4\}/);
+  assert.match(page, /type EnemyIntent/);
+  assert.match(page, /敵の次行動/);
+  assert.match(page, /battleAction\("guard"\)/);
+  assert.match(page, /Math\.max\(18,Math\.ceil\(st\.maxHp\*\.45\)\)/);
+  assert.match(page, /g\.potions>=3/);
+  assert.match(page, /shopPotionAvailable:false/);
+  assert.match(page, /Math\.min\(48,12\+/);
 });
