@@ -49,9 +49,9 @@ const DEEP_FORGE_NAMES: Record<GearKind, string[]> = {
   accessory: ["骨環","刃の指輪","墓守石","深命の首飾り","灼魂の輪","疾影の鈴","亡王の印","虚空の瞳"],
 };
 const gear: Gear[] = [
-  ...WEAPONS.map((name, i) => ({ id:`w${i+1}`, name, kind:"weapon" as GearKind, tier:i+1, price:18+(i+1)*15, atk:2+(i+1)*2 })),
-  ...ARMORS.map((name, i) => ({ id:`a${i+1}`, name, kind:"armor" as GearKind, tier:i+1, price:16+(i+1)*14, def:1+Math.ceil((i+1)*1.6), hp:(i+1)%3===0?4+i:0 })),
-  ...ACCESSORIES.map((name, i) => ({ id:`x${i+1}`, name, kind:"accessory" as GearKind, tier:i+1, price:25+(i+1)*20, atk:i%3===0?2+i:0, def:i%3===1?2+Math.floor(i/2):0, hp:i%3===2?8+i*2:0, mp:i%2===0?3+i:0 })),
+  ...WEAPONS.map((name, i) => ({ id:`w${i+1}`, name:`⚔ ${name}`, kind:"weapon" as GearKind, tier:i+1, price:18+(i+1)*15, atk:2+(i+1)*2 })),
+  ...ARMORS.map((name, i) => ({ id:`a${i+1}`, name:`▣ ${name}`, kind:"armor" as GearKind, tier:i+1, price:16+(i+1)*14, def:1+Math.ceil((i+1)*1.6), hp:(i+1)%3===0?4+i:0 })),
+  ...ACCESSORIES.map((name, i) => ({ id:`x${i+1}`, name:`◉ ${name}`, kind:"accessory" as GearKind, tier:i+1, price:25+(i+1)*20, atk:i%3===0?2+i:0, def:i%3===1?2+Math.floor(i/2):0, hp:i%3===2?8+i*2:0, mp:i%2===0?3+i:0 })),
 ];
 
 const INTENTS: Record<EnemyIntent, { label: string; detail: string; multiplier: number }> = {
@@ -106,9 +106,9 @@ export default function Home(){
   useEffect(()=>{if(ready)localStorage.setItem(META_KEY,JSON.stringify(meta));},[meta,ready]); useEffect(()=>{if(!ready)return;if(run)localStorage.setItem(RUN_KEY,JSON.stringify(run));else localStorage.removeItem(RUN_KEY);},[run,ready]);
   const beep=useCallback((f=440,d=.06,volume=.02,type:OscillatorType="square")=>{if(muted)return;const C=window.AudioContext||(window as typeof window&{webkitAudioContext:typeof AudioContext}).webkitAudioContext;const c=audio.current??new C();audio.current=c;void c.resume();const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(volume,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d);},[muted]);
   const triggerFx=useCallback((fx:BattleFx)=>{setBattleFx(fx);window.setTimeout(()=>setBattleFx(""),fx==="vanish"?420:260);},[]);
-  const showTurn=useCallback(()=>{setTurnStep("player");window.setTimeout(()=>setTurnStep("enemy"),230);window.setTimeout(()=>setTurnStep("idle"),520);},[]);
-  useEffect(()=>{const onBattleClick=(event:MouseEvent)=>{if((event.target as HTMLElement).closest(".battle-actions"))showTurn();};window.addEventListener("click",onBattleClick,true);return()=>window.removeEventListener("click",onBattleClick,true);},[showTurn]);
-  useEffect(()=>{const m=run?.message??"";if(/を倒した/.test(m))triggerFx("vanish");else if(/爆裂石/.test(m)){triggerFx("blast");showTurn();}else if(/回復|治療/.test(m)){triggerFx("heal");showTurn();}else if(/火球|氷結|雷撃/.test(m)){triggerFx("magic");showTurn();}else if(/の攻撃。|強打|連撃|盾打ち/.test(m)){triggerFx("slash");showTurn();}},[run?.message,triggerFx,showTurn]);
+  const showTurn=useCallback(()=>{setTurnStep("player");window.setTimeout(()=>setTurnStep("enemy"),650);window.setTimeout(()=>setTurnStep("idle"),1350);},[]);
+  useEffect(()=>{const onBattleClick=(event:MouseEvent)=>{const button=(event.target as HTMLElement).closest("button");if(button?.textContent?.includes("回復薬 ×0"))return;if(button?.closest(".battle-actions"))showTurn();};window.addEventListener("click",onBattleClick,true);return()=>window.removeEventListener("click",onBattleClick,true);},[showTurn]);
+  useEffect(()=>{const m=run?.message??"";if(/を倒した/.test(m))triggerFx("vanish");else if(/爆裂石/.test(m))triggerFx("blast");else if(/回復|治療/.test(m)&&!/持っていない/.test(m))triggerFx("heal");else if(/火球|氷結|雷撃/.test(m))triggerFx("magic");else if(/の攻撃。|強打|連撃|盾打ち/.test(m))triggerFx("slash");},[run?.message,triggerFx]);
   const chime=useCallback(()=>{beep(659,.08,.035);setTimeout(()=>beep(880,.09,.03),80);setTimeout(()=>beep(1175,.15,.025),165);},[beep]);
   const victorySfx=useCallback(()=>{beep(98,.11,.035,"sawtooth");setTimeout(()=>beep(131,.12,.03,"square"),85);setTimeout(()=>beep(165,.18,.022,"triangle"),175);},[beep]);
   useEffect(()=>{if(!run||muted)return;const explore=[110,0,165,196,147,0,165,131],battle=[82,110,87,123,73,116,92,131,82,104,78,117],shop=[220,277,330,277,247,330,277,220];const notes=run.phase==="battle"?battle:run.phase==="shop"?shop:explore,tempo=run.phase==="battle"?132:235;let step=0;const id=window.setInterval(()=>{const note=notes[step++%notes.length];if(note)beep(note,run.phase==="battle"?.095:.13,run.phase==="battle"?.009:.0065,step%4===0?"sawtooth":"square");},tempo);return()=>window.clearInterval(id);},[Boolean(run),run?.phase,muted,beep]);
