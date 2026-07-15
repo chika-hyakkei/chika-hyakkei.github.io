@@ -65,3 +65,10 @@ test("defines the hundred-monster catalog", async () => {
   assert.match(monsters, /\["通常",""\].*\["凶暴","狂"\].*\["呪染","呪"\].*\["深淵","深"\]/s);
   assert.match(monsters, /"百景の底王"/);
 });
+
+test("defines the hundred-item catalog", async () => {
+  const items = await readFile(new URL("../app/items.ts", import.meta.url), "utf8");
+  for (const category of ["weapon", "armor", "accessory", "consumable", "relic"]) assert.match(items, new RegExp(`category:\\"${category}\\"`));
+  assert.match(items, /weaponFamilies\.flatMap/);
+  assert.match(items, /armorFamilies\.flatMap/);
+});
