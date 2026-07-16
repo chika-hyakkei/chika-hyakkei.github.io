@@ -25,17 +25,18 @@ type Run = {
   potions: number; bombs: number; combo: number; relics: string[]; testMode: boolean; quest: string; recovery: OwnedGear[]; shopPotionAvailable: boolean; battle: BattleEnemy | null; pendingEnemyTurn: PendingEnemyTurn | null; guard: number; statuses: Status[]; message: string;
 };
 type Grave = { floor: number; items: OwnedGear[] };
-type Meta = { bestFloor: number; bestScore: number; totalKills: number; cleared: boolean; unlocked: JobKey[]; jobBest: Partial<Record<JobKey, number>>; mastery: Partial<Record<JobKey, number>>; titles: string[]; grave: Grave | null; bestiary: Record<string,number> };
+type Meta = { version: 2; bestFloor: number; bestScore: number; totalKills: number; cleared: boolean; unlocked: JobKey[]; jobBest: Partial<Record<JobKey, number>>; mastery: Partial<Record<JobKey, number>>; titles: string[]; grave: Grave | null; bestiary: Record<string,number> };
 type Result = { reason: "dead" | "return" | "abandon" | "clear"; floor: number; score: number; kills: number; bosses: number; unlocked: JobKey[] };
 
 const RUN_KEY = "chika-hyakkei-run-v3";
 const META_KEY = "chika-hyakkei-meta-v2";
 const LEGACY_META_KEY = "chika-hyakkei-meta-v1";
 const W = 13, H = 11;
-const defaultMeta: Meta = { bestFloor: 0, bestScore: 0, totalKills: 0, cleared: false, unlocked: ["warrior", "thief", "priest", "mage"], jobBest: {}, mastery: {}, titles: [], grave: null, bestiary: {} };
+const defaultMeta: Meta = { version: 2, bestFloor: 0, bestScore: 0, totalKills: 0, cleared: false, unlocked: ["warrior", "thief", "priest", "mage"], jobBest: {}, mastery: {}, titles: [], grave: null, bestiary: {} };
+const normalizeMeta=(saved:Partial<Meta>):Meta=>({...defaultMeta,...saved,version:2,unlocked:Array.isArray(saved.unlocked)?saved.unlocked:defaultMeta.unlocked,jobBest:saved.jobBest??{},mastery:saved.mastery??{},titles:Array.isArray(saved.titles)?saved.titles:[],grave:saved.grave??null,bestiary:saved.bestiary??{}});
 
 const JOBS: Record<JobKey, { name: string; mark: string; desc: string; hp: number; mp: number; atk: number; def: number; skills: [string, string] }> = {
-  warrior: { name: "戦士", mark: "剣", desc: "高い体力と一撃の重さ", hp: 30, mp: 7, atk: 7, def: 4, skills: ["強打", "防御"] },
+  warrior: { name: "戦士", mark: "剣", desc: "高い体力と一撃の重さ", hp: 30, mp: 7, atk: 7, def: 4, skills: ["強打", "鉄壁"] },
   thief: { name: "盗賊", mark: "鍵", desc: "逃走と金策に優れる", hp: 23, mp: 10, atk: 6, def: 3, skills: ["連撃", "盗む"] },
   priest: { name: "僧侶", mark: "祈", desc: "回復しながら粘り強く戦う", hp: 25, mp: 16, atk: 4, def: 4, skills: ["治療", "守りの祈り"] },
   mage: { name: "魔法使い", mark: "炎", desc: "魔法で敵を一気に倒す", hp: 19, mp: 21, atk: 3, def: 2, skills: ["火球", "氷結"] },
@@ -111,7 +112,7 @@ function Bestiary({ meta, onClose }: { meta: Meta; onClose: () => void }) {
 export default function Home(){
   const [meta,setMeta]=useState<Meta>(defaultMeta); const [run,setRun]=useState<Run|null>(null); const [result,setResult]=useState<Result|null>(null);
   const [name,setName]=useState(""); const [job,setJob]=useState<JobKey>("warrior"); const [quest,setQuest]=useState(QUESTS[0]); const [ready,setReady]=useState(false); const [muted,setMuted]=useState(false); const [pendingPurchase,setPendingPurchase]=useState<Gear|"potion"|null>(null); const [battleFx,setBattleFx]=useState<BattleFx>(""); const [enemySlash,setEnemySlash]=useState(false); const [turnStep,setTurnStep]=useState<"idle"|"player"|"enemy">("idle"); const [showBestiary,setShowBestiary]=useState(false); const [testGate,setTestGate]=useState(false); const [testPassword,setTestPassword]=useState(""); const [testFloor,setTestFloor]=useState(1); const audio=useRef<AudioContext|null>(null);
-  useEffect(()=>{try{const m=localStorage.getItem(META_KEY)??localStorage.getItem(LEGACY_META_KEY),r=localStorage.getItem(RUN_KEY);if(m)setMeta({...defaultMeta,...JSON.parse(m)});if(r){const saved=JSON.parse(r) as Run;setRun({...saved,bombs:saved.bombs??0,combo:saved.combo??0,relics:saved.relics??[],testMode:saved.testMode??false,quest:saved.quest??QUESTS[0],recovery:saved.recovery??[],shopPotionAvailable:saved.shopPotionAvailable??true,statuses:saved.statuses??[],pendingEnemyTurn:saved.pendingEnemyTurn??null,battle:saved.battle?{...saved.battle,intent:saved.battle.intent??"attack",turn:saved.battle.turn??0}:null});}}catch{}setReady(true);},[]);
+  useEffect(()=>{try{const m=localStorage.getItem(META_KEY)??localStorage.getItem(LEGACY_META_KEY),r=localStorage.getItem(RUN_KEY);if(m)setMeta(normalizeMeta(JSON.parse(m) as Partial<Meta>));if(r){const saved=JSON.parse(r) as Run;setRun({...saved,bombs:saved.bombs??0,combo:saved.combo??0,relics:saved.relics??[],testMode:saved.testMode??false,quest:saved.quest??QUESTS[0],recovery:saved.recovery??[],shopPotionAvailable:saved.shopPotionAvailable??true,statuses:saved.statuses??[],pendingEnemyTurn:saved.pendingEnemyTurn??null,battle:saved.battle?{...saved.battle,intent:saved.battle.intent??"attack",turn:saved.battle.turn??0}:null});}}catch{}setReady(true);},[]);
   useEffect(()=>{if(ready)localStorage.setItem(META_KEY,JSON.stringify(meta));},[meta,ready]); useEffect(()=>{if(!ready)return;if(run)localStorage.setItem(RUN_KEY,JSON.stringify(run));else localStorage.removeItem(RUN_KEY);},[run,ready]);
   const beep=useCallback((f=440,d=.06,volume=.02,type:OscillatorType="square")=>{if(muted)return;const C=window.AudioContext||(window as typeof window&{webkitAudioContext:typeof AudioContext}).webkitAudioContext;const c=audio.current??new C();audio.current=c;void c.resume();const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(volume,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d);},[muted]);
   const triggerFx=useCallback((fx:BattleFx)=>{setBattleFx(fx);window.setTimeout(()=>setBattleFx(""),fx==="vanish"?420:260);},[]);
