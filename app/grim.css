@@ -78,3 +78,15 @@
 /* Map sprites need to read at a glance on both desktop and touch screens. */
 .map .pixel-player{width:42px;height:46px;z-index:6;filter:drop-shadow(3px 4px 0 #000)}
 @media(max-width:760px){.map .pixel-player{width:38px;height:42px}}
+
+/* Keep stepping in place while the explorer waits; each direction alternates feet. */
+@keyframes footstep-front{0%,49%{background-image:url("/assets/hero-front-a.png")}50%,100%{background-image:url("/assets/hero-front-b.png")}}
+@keyframes footstep-back{0%,49%{background-image:url("/assets/hero-back-a.png")}50%,100%{background-image:url("/assets/hero-back-b.png")}}
+@keyframes footstep-right{0%,49%{background-image:url("/assets/hero-right-a.png")}50%,100%{background-image:url("/assets/hero-right-b.png")}}
+@keyframes footstep-left{0%,49%{background-image:url("/assets/hero-left-a.png")}50%,100%{background-image:url("/assets/hero-left-b.png")}}
+.is-exploring.facing-front .map .pixel-player{animation:footstep-front .72s steps(1,end) infinite!important}
+.is-exploring.facing-back .map .pixel-player{animation:footstep-back .72s steps(1,end) infinite!important}
+.is-exploring.facing-right .map .pixel-player{animation:footstep-right .72s steps(1,end) infinite!important}
+.is-exploring.facing-left .map .pixel-player{animation:footstep-left .72s steps(1,end) infinite!important}
+/* Both click and keyboard attacks now use this visible forward sword motion. */
+.turn-player .battle-player-hud .pixel-player,.fx-slash .battle-player-hud .pixel-player{animation:hero-strike .38s steps(3)!important}
