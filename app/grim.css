@@ -63,3 +63,14 @@
 .hp-critical:not(.turn-player):not(.fx-slash) .battle-player-hud .pixel-player{background-image:url("/assets/hero-tired.png")}
 .battle-player-hud .pixel-player{width:38px;height:43px}
 @media(max-width:760px){.pixel-player{width:28px;height:32px}.battle-player-hud .pixel-player{width:34px;height:39px}}
+
+/* Dungeon walking is a two-frame footstep in every direction, not a floating bob. */
+.is-exploring .map .pixel-player{animation:none!important;transform:none!important;background-position:center;background-size:auto 100%}
+.is-exploring.facing-front.stride-a .map .pixel-player{background-image:url("/assets/hero-front-a.png")}
+.is-exploring.facing-front.stride-b .map .pixel-player{background-image:url("/assets/hero-front-b.png")}
+.is-exploring.facing-back.stride-a .map .pixel-player{background-image:url("/assets/hero-back-a.png")}
+.is-exploring.facing-back.stride-b .map .pixel-player{background-image:url("/assets/hero-back-b.png")}
+.is-exploring.facing-right.stride-a .map .pixel-player{background-image:url("/assets/hero-right-a.png")}
+.is-exploring.facing-right.stride-b .map .pixel-player{background-image:url("/assets/hero-right-b.png")}
+.is-exploring.facing-left.stride-a .map .pixel-player{background-image:url("/assets/hero-left-a.png")}
+.is-exploring.facing-left.stride-b .map .pixel-player{background-image:url("/assets/hero-left-b.png")}
