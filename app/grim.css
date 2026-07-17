@@ -97,3 +97,6 @@
 .turn-player.action-guard .battle-player-hud .pixel-player{background-image:url("/assets/hero-idle.png")!important;animation:hero-guard .34s steps(2)!important}
 @keyframes hero-guard{0%,100%{transform:translateX(0) scale(1.45)}45%{transform:translateX(-5px) scale(1.38);filter:brightness(1.35)}}
 @media(max-width:760px){.turn-player.action-guard .battle-player-hud .pixel-player{animation-name:hero-guard-mobile}@keyframes hero-guard-mobile{0%,100%{transform:translateX(0) scale(1.2)}45%{transform:translateX(-4px) scale(1.15)}}}
+
+/* Optical centering for the two sheets whose artwork sits left inside its transparent crop. */
+.is-exploring.facing-back .map .pixel-player,.is-exploring.facing-left .map .pixel-player{transform:translateX(5px)!important}
