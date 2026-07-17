@@ -57,6 +57,19 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /g\.potions>=3/);
   assert.match(page, /shopPotionAvailable:false/);
   assert.match(page, /Math\.min\(48,12\+/);
+  assert.match(page, /匿名テスト記録/);
+  assert.match(page, /匿名記録をコピー/);
+  assert.match(page, /recordRunStart/);
+  assert.match(page, /recordRunEnd/);
+});
+
+test("stores only anonymous local playtest records", async () => {
+  const telemetry = await readFile(new URL("../app/telemetry.ts", import.meta.url), "utf8");
+  assert.match(telemetry, /chika-hyakkei-test-record-v1/);
+  assert.match(telemetry, /installId/);
+  assert.match(telemetry, /recentRuns/);
+  assert.match(telemetry, /telemetryExport/);
+  assert.doesNotMatch(telemetry, /email|location|fetch\(/i);
 });
 
 test("defines the hundred-monster catalog", async () => {
