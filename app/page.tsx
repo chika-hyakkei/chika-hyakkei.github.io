@@ -163,7 +163,7 @@ export default function Home(){
   const sell=(uid:number)=>setRun(g=>{if(!g||g.phase!=="shop")return g;const item=g.inventory.find(i=>i.uid===uid);if(!item)return g;const value=Math.floor(item.price/2);return{...g,inventory:g.inventory.filter(i=>i.uid!==uid),gold:g.gold+value,totalGold:g.totalGold+value,message:`${item.name}を${value}Gで売った。`};});
   const discard=(uid:number)=>setRun(g=>{if(!g)return g;const item=g.inventory.find(i=>i.uid===uid);if(!item)return g;beep(105,.12,.025);return{...g,inventory:g.inventory.filter(i=>i.uid!==uid),message:`${item.name}を捨てた。`};});
   useEffect(()=>{const h=(e:KeyboardEvent)=>{if(!run||run.phase!=="explore")return;const dirs:Record<string,[number,number]>={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};const d=dirs[e.key];if(d){e.preventDefault();move(...d);}};window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);});
-  return <main className={`shell fx-${battleFx} turn-${turnStep}`}>
+  return <main className={`shell fx-${battleFx} turn-${turnStep} ${run&&s&&run.hp/s.maxHp<=.5?"hp-critical":""} ${run?.phase==="explore"?"is-exploring":""}`}>
     <header><div><span className="kicker">ENDLESS DUNGEON RPG</span><h1>地下百景</h1></div><div className="records"><span>最高 <b>{meta.bestFloor}F</b></span><span>最高得点 <b>{meta.bestScore.toLocaleString()}</b></span><button onClick={()=>{if(muted)void audio.current?.resume();setMuted(!muted)}}>{muted?"音 OFF":"音 ON"}</button></div></header>
     {!run?<section className="start-panel">
       <div className="title-copy"><div className="shaft" aria-hidden="true"><i/><i/><i/><i/><i/></div><p>百の景色を越えても、底はない。<br/>倒れれば、すべてを失う。</p></div>
