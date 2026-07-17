@@ -72,6 +72,16 @@ test("stores only anonymous local playtest records", async () => {
   assert.doesNotMatch(telemetry, /email|location|fetch\(/i);
 });
 
+test("includes a static GitHub Pages deployment path", async () => {
+  const script = await readFile(new URL("../scripts/build-github-pages.mjs", import.meta.url), "utf8");
+  const workflow = await readFile(new URL("../.github/workflows/deploy-pages.yml", import.meta.url), "utf8");
+  assert.match(script, /dist\/client/);
+  assert.match(script, /resolve\(outputDir, "index\.html"\)/);
+  assert.match(script, /\.nojekyll/);
+  assert.match(workflow, /actions\/deploy-pages@v4/);
+  assert.match(workflow, /npm run build:pages/);
+});
+
 test("defines the hundred-monster catalog", async () => {
   const monsters = await readFile(new URL("../app/monsters.ts", import.meta.url), "utf8");
   assert.match(monsters, /bases\.flatMap/);
