@@ -94,9 +94,14 @@
 /* The back and left sheets have wider transparent margins: optically center them on the tile. */
 .is-exploring.facing-back .map .pixel-player,.is-exploring.facing-left .map .pixel-player{background-position:left center}
 /* Guarding must read as a shield brace, never as a sword swing. */
-.turn-player.action-guard .battle-player-hud .pixel-player{background-image:url("/assets/hero-idle.png")!important;animation:hero-guard .34s steps(2)!important}
+.turn-player.action-guard .battle-player-hud .pixel-player{background-image:url("/assets/hero-guard.png")!important;animation:hero-guard .34s steps(2)!important}
 @keyframes hero-guard{0%,100%{transform:translateX(0) scale(1.45)}45%{transform:translateX(-5px) scale(1.38);filter:brightness(1.35)}}
 @media(max-width:760px){.turn-player.action-guard .battle-player-hud .pixel-player{animation-name:hero-guard-mobile}@keyframes hero-guard-mobile{0%,100%{transform:translateX(0) scale(1.2)}45%{transform:translateX(-4px) scale(1.15)}}}
 
 /* Optical centering for the two sheets whose artwork sits left inside its transparent crop. */
 .is-exploring.facing-back .map .pixel-player,.is-exploring.facing-left .map .pixel-player{transform:translateX(5px)!important}
+
+/* Spell skills use a casting pose and orb, never the sword-swing pose. */
+.turn-player.action-magic .battle-player-hud .pixel-player{background-image:url("/assets/hero-magic.png")!important;animation:hero-cast .4s steps(3)!important}
+@keyframes hero-cast{0%,100%{transform:translateX(0) scale(1.45);filter:brightness(1)}45%{transform:translateX(7px) scale(1.52);filter:brightness(1.5) saturate(1.4)}}
+@media(max-width:760px){.turn-player.action-magic .battle-player-hud .pixel-player{animation-name:hero-cast-mobile}@keyframes hero-cast-mobile{0%,100%{transform:translateX(0) scale(1.2)}45%{transform:translateX(5px) scale(1.27);filter:brightness(1.5)}}}
