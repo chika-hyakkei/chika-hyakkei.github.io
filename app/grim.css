@@ -53,3 +53,13 @@
 .turn-player .battle:after,.turn-enemy .battle:after{content:none!important;display:none}
 @media(max-width:760px){.is-exploring .map .pixel-player{animation-duration:.62s}.turn-player .battle-player-hud .pixel-player,.fx-slash .battle-player-hud .pixel-player{animation-name:hero-strike-mobile}@keyframes hero-strike-mobile{35%{transform:translateX(8px) scale(1.25)}75%{transform:translateX(3px) scale(1.2)}}.hp-critical .battle-player-hud .pixel-player{animation-name:hero-weary-mobile}@keyframes hero-weary-mobile{0%,100%{transform:translateY(2px) scale(1.2)}50%{transform:translateY(5px) scale(1.13)}}}
 @media(prefers-reduced-motion:reduce){.is-exploring .map .pixel-player,.is-exploring .map .pixel-player i,.turn-player .battle-player-hud .pixel-player,.fx-slash .battle-player-hud .pixel-player,.turn-player .battle .monster,.fx-slash .battle .monster,.battle-player-hud.enemy-hit .pixel-player,.hp-critical .battle-player-hud .pixel-player{animation:none}}
+
+/* Selected blue-haired hero sprite set.  The five states are loaded only when needed. */
+.pixel-player{width:30px;height:34px;background:url("/assets/hero-idle.png") center/auto 100% no-repeat;filter:drop-shadow(2px 3px 0 #000)}
+.pixel-player i{display:none!important}
+.is-exploring .map .pixel-player{background-image:url("/assets/hero-walk.png")}
+.turn-player .battle-player-hud .pixel-player,.fx-slash .battle-player-hud .pixel-player{background-image:url("/assets/hero-attack.png")}
+.battle-player-hud.enemy-hit .pixel-player{background-image:url("/assets/hero-hit.png")}
+.hp-critical:not(.turn-player):not(.fx-slash) .battle-player-hud .pixel-player{background-image:url("/assets/hero-tired.png")}
+.battle-player-hud .pixel-player{width:38px;height:43px}
+@media(max-width:760px){.pixel-player{width:28px;height:32px}.battle-player-hud .pixel-player{width:34px;height:39px}}
