@@ -1,29 +1,63 @@
 export type GameTheme = "dungeon" | "battle" | "boss" | "shop" | "death";
 
-type Track = { melody: number[]; bass: number[]; stepMs: number; lead: OscillatorType; grow: boolean };
+type Track = { melody: number[]; bass: number[]; chords: number[][]; stepMs: number; lead: OscillatorType; heavy?: boolean };
 
-// 以前のゲーム内メロディを核に、周回するごとに低音・和音・オクターブを足す。
+// 既存BGMの主旋律・テンポは維持し、下支えの音だけを追加する。
 const tracks: Record<GameTheme, Track> = {
-  dungeon: { melody: [110,0,165,196,147,0,165,131], bass: [55,0,55,0,49,0,55,0], stepMs: 235, lead: "square", grow: true },
-  battle: { melody: [82,110,87,123,73,116,92,131,82,104,78,117], bass: [41,41,43,43,37,37,46,46,41,41,39,39], stepMs: 132, lead: "sawtooth", grow: true },
-  boss: { melody: [82,110,87,123,73,116,92,131,82,104,78,117,82,123,110,131], bass: [41,41,43,43,37,37,46,46,41,41,39,39,41,46,43,49], stepMs: 116, lead: "sawtooth", grow: true },
-  shop: { melody: [220,277,330,277,247,330,277,220], bass: [110,0,139,0,123,0,110,0], stepMs: 190, lead: "square", grow: true },
-  death: { melody: [165,147,131,110,98,82,73,0], bass: [55,0,49,0,41,0,37,0], stepMs: 260, lead: "triangle", grow: false },
+  dungeon: { melody: [110,0,165,196,147,0,165,131], bass: [55,0,55,0,49,0,55,0], chords: [[110,131,165],[98,123,147],[87,110,131],[98,123,165]], stepMs: 235, lead: "square" },
+  battle: { melody: [82,110,87,123,73,116,92,131,82,104,78,117], bass: [41,41,43,43,37,37,46,46,41,41,39,39], chords: [[82,98,123],[87,104,131],[73,92,116],[82,98,131]], stepMs: 132, lead: "sawtooth" },
+  boss: { melody: [82,110,87,123,73,116,92,131,82,104,78,117,82,123,110,131], bass: [41,41,43,43,37,37,46,46,41,41,39,39,41,46,43,49], chords: [[82,98,123],[87,104,131],[73,92,116],[82,98,131]], stepMs: 116, lead: "sawtooth", heavy: true },
+  shop: { melody: [220,277,330,277,247,330,277,220], bass: [110,0,139,0,123,0,110,0], chords: [[220,277,330],[247,294,370],[196,247,294],[220,277,330]], stepMs: 190, lead: "square" },
+  death: { melody: [165,147,131,110,98,82,73,0], bass: [55,0,49,0,41,0,37,0], chords: [[165,196,247],[147,175,220],[131,165,196],[110,131,165]], stepMs: 260, lead: "triangle" },
 };
 
+function createBus(context: AudioContext, level: number) {
+  const master = context.createGain(), compressor = context.createDynamicsCompressor(), delay = context.createDelay(.4), feedback = context.createGain(), wet = context.createGain();
+  master.gain.value = level; compressor.threshold.value = -22; compressor.knee.value = 14; compressor.ratio.value = 5; compressor.attack.value = .01; compressor.release.value = .18;
+  delay.delayTime.value = .165; feedback.gain.value = .17; wet.gain.value = .16;
+  master.connect(compressor); master.connect(delay); delay.connect(feedback); feedback.connect(delay); delay.connect(wet); wet.connect(compressor); compressor.connect(context.destination);
+  return { master, stop: () => { master.disconnect(); delay.disconnect(); feedback.disconnect(); wet.disconnect(); compressor.disconnect(); } };
+}
+
+function playTone(context: AudioContext, destination: AudioNode, frequency: number, duration: number, level: number, type: OscillatorType, when: number, detune = 0) {
+  if (!frequency) return;
+  const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = type; oscillator.frequency.value = frequency; oscillator.detune.value = detune;
+  gain.gain.setValueAtTime(.0001, when); gain.gain.exponentialRampToValueAtTime(level, when + .014); gain.gain.exponentialRampToValueAtTime(.0001, when + duration);
+  oscillator.connect(gain); gain.connect(destination); oscillator.start(when); oscillator.stop(when + duration + .03);
+}
+
+function lowPulse(context: AudioContext, destination: AudioNode, when: number, level: number) {
+  const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = "sine"; oscillator.frequency.setValueAtTime(82, when); oscillator.frequency.exponentialRampToValueAtTime(39, when + .13);
+  gain.gain.setValueAtTime(level, when); gain.gain.exponentialRampToValueAtTime(.0001, when + .15); oscillator.connect(gain); gain.connect(destination); oscillator.start(when); oscillator.stop(when + .16);
+}
+
 export function startGameTheme(context: AudioContext, theme: GameTheme) {
-  const track = tracks[theme], master = context.createGain(); master.gain.value = theme === "boss" ? .13 : .105; master.connect(context.destination);
-  const tone = (frequency: number, duration: number, level: number, type: OscillatorType, when: number) => { if (!frequency) return; const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = type; oscillator.frequency.value = frequency; gain.gain.setValueAtTime(.0001, when); gain.gain.exponentialRampToValueAtTime(level, when + .014); gain.gain.exponentialRampToValueAtTime(.0001, when + duration); oscillator.connect(gain); gain.connect(master); oscillator.start(when); oscillator.stop(when + duration + .025); };
-  const pulse = (when: number, level: number) => { const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = "sine"; oscillator.frequency.setValueAtTime(92, when); oscillator.frequency.exponentialRampToValueAtTime(45, when + .1); gain.gain.setValueAtTime(level, when); gain.gain.exponentialRampToValueAtTime(.0001, when + .12); oscillator.connect(gain); gain.connect(master); oscillator.start(when); oscillator.stop(when + .13); };
-  let step = 0, timer = 0, stopped = false;
-  const tick = () => { if (stopped) return; const when = context.currentTime + .03, i = step % track.melody.length, lap = Math.floor(step / track.melody.length) % 4, note = track.melody[i], bass = track.bass[i];
-    tone(note, track.stepMs / 1000 * .72, theme === "boss" ? .069 : .054, track.lead, when);
-    if (lap >= 1 || !track.grow) tone(bass, track.stepMs / 1000 * .9, theme === "shop" ? .028 : .039, "triangle", when);
-    if (lap >= 2 && note) tone(note / 2, track.stepMs / 1000 * .62, .018, "sine", when + .028);
-    if (lap >= 3 && note && theme !== "death") tone(note * 2, track.stepMs / 1000 * .36, .014, "triangle", when);
-    if (theme === "shop" && i % 2 === 0) tone(note * 1.5, .075, lap >= 2 ? .024 : .014, "sine", when + .05);
-    if (theme === "boss" && (i % 4 === 0 || lap >= 2 && i % 4 === 2)) pulse(when, lap >= 2 ? .052 : .034);
-    step++; timer = window.setTimeout(tick, track.stepMs);
+  const track = tracks[theme], bus = createBus(context, theme === "boss" ? .19 : .15); let step = 0, timer = 0, stopped = false;
+  const tick = () => { if (stopped) return; const when = context.currentTime + .03, i = step % track.melody.length, beat = i % 4, note = track.melody[i], bass = track.bass[i], chord = track.chords[Math.floor(i / 2) % track.chords.length], lap = Math.floor(step / track.melody.length) % 4;
+    // 先に従来のメロディ、次に重心となる低音、最後に控えめな和音を置く。
+    playTone(context,bus.master,note,track.stepMs/1000*.78,.061,track.lead,when);
+    if(note) playTone(context,bus.master,note,track.stepMs/1000*.72,.015,"square",when,7);
+    playTone(context,bus.master,bass,track.stepMs/1000*.92,theme === "shop" ? .028 : .045,"triangle",when);
+    if(beat===0) chord.forEach((frequency,index)=>playTone(context,bus.master,frequency,track.stepMs/1000*3.45,.011-index*.0015,"sine",when+.012));
+    if(lap>=1&&note) playTone(context,bus.master,note/2,track.stepMs/1000*.64,.019,"sine",when+.042);
+    if(lap>=2&&note) playTone(context,bus.master,note*2,track.stepMs/1000*.34,.014,"triangle",when+.02);
+    if(theme === "shop" && beat===2) playTone(context,bus.master,note*1.5,.075,.022,"sine",when+.06);
+    if(track.heavy && (beat===0 || lap>=2&&beat===2)) lowPulse(context,bus.master,when,lap>=2 ? .065 : .045);
+    step++; timer=window.setTimeout(tick,track.stepMs);
   };
-  tick(); return () => { stopped = true; window.clearTimeout(timer); master.disconnect(); };
+  tick(); return () => { stopped=true; window.clearTimeout(timer); bus.stop(); };
+}
+
+export function startOpeningTheme(context: AudioContext) {
+  const bus = createBus(context,.18), melody=[0,0,220,0,247,0,262,0,220,0,196,0,0,0,0,0,220,247,262,294,262,247,220,196,247,262,294,330,294,262,247,0,262,294,330,349,330,294,262,247,294,330,392,330,294,262,247,0,330,349,392,440,392,349,330,294,262,294,330,392,349,330,294,0], roots=[110,110,110,110,98,98,98,98,87,87,87,87,98,98,110,110], thirds=[131,131,131,131,123,123,123,123,110,110,110,110,123,123,131,131];
+  let step=0,timer=0,stopped=false;
+  const tick=()=>{if(stopped)return;const when=context.currentTime+.03,i=step%melody.length,section=Math.floor(i/16),note=melody[i],root=roots[Math.floor(i/4)%roots.length],third=thirds[Math.floor(i/4)%thirds.length];
+    playTone(context,bus.master,note,.13,section<2 ? .046 : .07,"triangle",when);
+    if(i%4===0){playTone(context,bus.master,root,.56,.053,"sine",when);playTone(context,bus.master,third,.56,.024,"sine",when);playTone(context,bus.master,root*1.5,.56,.018,"triangle",when);}
+    if(section>=1&&note)playTone(context,bus.master,note/2,.17,.026,"triangle",when+.03);
+    if(section>=2&&note)playTone(context,bus.master,note*2,.08,.018,"square",when+.045);
+    if(section===3&&i%4===0)lowPulse(context,bus.master,when,.055);
+    step=(step+1)%melody.length;timer=window.setTimeout(tick,section===0?185:section===1?165:145);
+  };
+  tick();return()=>{stopped=true;window.clearTimeout(timer);bus.stop();};
 }
