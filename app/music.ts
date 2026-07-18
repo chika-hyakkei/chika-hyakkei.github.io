@@ -1,22 +1,29 @@
 export type GameTheme = "dungeon" | "battle" | "boss" | "shop" | "death";
 
-type Track = { melody: number[]; roots: number[]; stepMs: number; lead: OscillatorType; drums: boolean; bright?: boolean };
+type Track = { melody: number[]; bass: number[]; stepMs: number; lead: OscillatorType; grow: boolean };
 
+// 以前のゲーム内メロディを核に、周回するごとに低音・和音・オクターブを足す。
 const tracks: Record<GameTheme, Track> = {
-  dungeon: { melody: [57,0,60,0,62,0,60,0,57,0,55,0,53,0,0,0], roots: [33,33,29,31], stepMs: 188, lead: "triangle", drums: false },
-  battle: { melody: [69,72,69,74,72,69,67,69,72,74,76,74,72,69,67,0], roots: [45,45,41,43], stepMs: 118, lead: "square", drums: true },
-  boss: { melody: [57,60,64,62,57,60,65,64,69,67,64,62,60,57,55,0,60,64,67,65,64,62,60,57,55,57,60,62,64,60,57,0], roots: [33,33,29,31,33,36,31,33], stepMs: 104, lead: "sawtooth", drums: true },
-  shop: { melody: [72,76,79,76,74,77,81,77,76,79,84,79,77,74,76,0], roots: [48,53,45,55], stepMs: 156, lead: "square", drums: false, bright: true },
-  death: { melody: [69,67,64,62,60,57,55,0,64,62,60,57,55,52,50,0], roots: [45,41,38,33], stepMs: 205, lead: "triangle", drums: false },
+  dungeon: { melody: [110,0,165,196,147,0,165,131], bass: [55,0,55,0,49,0,55,0], stepMs: 235, lead: "square", grow: true },
+  battle: { melody: [82,110,87,123,73,116,92,131,82,104,78,117], bass: [41,41,43,43,37,37,46,46,41,41,39,39], stepMs: 132, lead: "sawtooth", grow: true },
+  boss: { melody: [82,110,87,123,73,116,92,131,82,104,78,117,82,123,110,131], bass: [41,41,43,43,37,37,46,46,41,41,39,39,41,46,43,49], stepMs: 116, lead: "sawtooth", grow: true },
+  shop: { melody: [220,277,330,277,247,330,277,220], bass: [110,0,139,0,123,0,110,0], stepMs: 190, lead: "square", grow: true },
+  death: { melody: [165,147,131,110,98,82,73,0], bass: [55,0,49,0,41,0,37,0], stepMs: 260, lead: "triangle", grow: false },
 };
 
 export function startGameTheme(context: AudioContext, theme: GameTheme) {
-  const track = tracks[theme], master = context.createGain(); master.gain.value = theme === "boss" ? .19 : .15; master.connect(context.destination);
-  const hz = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
-  const voice = (midi: number, duration: number, level: number, type: OscillatorType, when: number) => { if (!midi) return; const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = type; oscillator.frequency.value = hz(midi); gain.gain.setValueAtTime(.0001, when); gain.gain.exponentialRampToValueAtTime(level, when + .01); gain.gain.exponentialRampToValueAtTime(.0001, when + duration); oscillator.connect(gain); gain.connect(master); oscillator.start(when); oscillator.stop(when + duration + .02); };
-  const kick = (when: number, level: number) => { const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = "sine"; oscillator.frequency.setValueAtTime(116, when); oscillator.frequency.exponentialRampToValueAtTime(42, when + .09); gain.gain.setValueAtTime(level, when); gain.gain.exponentialRampToValueAtTime(.0001, when + .11); oscillator.connect(gain); gain.connect(master); oscillator.start(when); oscillator.stop(when + .12); };
-  const snare = (when: number) => { const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * .055), context.sampleRate), data = buffer.getChannelData(0), source = context.createBufferSource(), filter = context.createBiquadFilter(), gain = context.createGain(); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; source.buffer = buffer; filter.type = "highpass"; filter.frequency.value = 1300; gain.gain.setValueAtTime(.045, when); gain.gain.exponentialRampToValueAtTime(.0001, when + .06); source.connect(filter); filter.connect(gain); gain.connect(master); source.start(when); source.stop(when + .07); };
+  const track = tracks[theme], master = context.createGain(); master.gain.value = theme === "boss" ? .13 : .105; master.connect(context.destination);
+  const tone = (frequency: number, duration: number, level: number, type: OscillatorType, when: number) => { if (!frequency) return; const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = type; oscillator.frequency.value = frequency; gain.gain.setValueAtTime(.0001, when); gain.gain.exponentialRampToValueAtTime(level, when + .014); gain.gain.exponentialRampToValueAtTime(.0001, when + duration); oscillator.connect(gain); gain.connect(master); oscillator.start(when); oscillator.stop(when + duration + .025); };
+  const pulse = (when: number, level: number) => { const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.type = "sine"; oscillator.frequency.setValueAtTime(92, when); oscillator.frequency.exponentialRampToValueAtTime(45, when + .1); gain.gain.setValueAtTime(level, when); gain.gain.exponentialRampToValueAtTime(.0001, when + .12); oscillator.connect(gain); gain.connect(master); oscillator.start(when); oscillator.stop(when + .13); };
   let step = 0, timer = 0, stopped = false;
-  const tick = () => { if (stopped) return; const when = context.currentTime + .025, i = step % track.melody.length, beat = i % 4, root = track.roots[Math.floor(i / 4) % track.roots.length], melody = track.melody[i]; voice(melody, track.stepMs / 1000 * .78, theme === "boss" ? .085 : .062, track.lead, when); if (theme === "dungeon" && melody && i % 4 === 0) voice(melody - 12, .3, .035, "sine", when); if (theme === "shop") { voice(root + 12, .22, .045, "triangle", when); if (beat === 2) voice(root + 19, .08, .027, "sine", when); } if (theme === "death") { voice(root, .44, .06, "sine", when); if (beat === 0) voice(root + 7, .24, .026, "triangle", when); } if (track.drums) { voice(root, .23, theme === "boss" ? .09 : .07, "triangle", when); if (beat === 2) voice(root + 7, .1, .032, "square", when); if (beat === 0 || theme === "boss" && beat === 2) kick(when, theme === "boss" ? .1 : .075); if (beat === 2) snare(when); if (theme === "boss" && beat % 2 === 1) voice(98, .018, .013, "sawtooth", when); } step++; timer = window.setTimeout(tick, track.stepMs); };
+  const tick = () => { if (stopped) return; const when = context.currentTime + .03, i = step % track.melody.length, lap = Math.floor(step / track.melody.length) % 4, note = track.melody[i], bass = track.bass[i];
+    tone(note, track.stepMs / 1000 * .72, theme === "boss" ? .069 : .054, track.lead, when);
+    if (lap >= 1 || !track.grow) tone(bass, track.stepMs / 1000 * .9, theme === "shop" ? .028 : .039, "triangle", when);
+    if (lap >= 2 && note) tone(note / 2, track.stepMs / 1000 * .62, .018, "sine", when + .028);
+    if (lap >= 3 && note && theme !== "death") tone(note * 2, track.stepMs / 1000 * .36, .014, "triangle", when);
+    if (theme === "shop" && i % 2 === 0) tone(note * 1.5, .075, lap >= 2 ? .024 : .014, "sine", when + .05);
+    if (theme === "boss" && (i % 4 === 0 || lap >= 2 && i % 4 === 2)) pulse(when, lap >= 2 ? .052 : .034);
+    step++; timer = window.setTimeout(tick, track.stepMs);
+  };
   tick(); return () => { stopped = true; window.clearTimeout(timer); master.disconnect(); };
 }
