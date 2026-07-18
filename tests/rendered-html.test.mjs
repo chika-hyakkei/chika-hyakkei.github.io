@@ -24,6 +24,7 @@ test("server-renders the Chika Hyakkei title screen", async () => {
 
 test("ships the complete roguelike loop", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const music = await readFile(new URL("../app/music.ts", import.meta.url), "utf8");
   for (const text of ["戦士","盗賊","僧侶","魔法使い","騎士","賢者","強打","盗む","治療","火球","盾打ち","雷撃"]) assert.match(page, new RegExp(text));
   assert.match(page, /const W = 13, H = 11/);
   assert.match(page, /function generateFloor/);
@@ -41,12 +42,14 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /を捨てた/);
   assert.match(page, /購入後、すぐに装備します/);
   assert.match(page, /チャリーン/);
-  assert.match(page, /window\.setInterval/);
+  assert.match(music, /startGameTheme/);
+  assert.match(music, /"dungeon" \| "battle" \| "boss" \| "shop" \| "death"/);
+  assert.match(music, /window\.setTimeout/);
   assert.match(page, /species-\$\{run\.battle\.kind%10\}/);
   assert.doesNotMatch(page, /kind:Math\.min\(9/);
   assert.match(page, /rank=Math\.floor\(floor\/30\)/);
   assert.match(page, /baseName.*＋\$\{rank\}/);
-  assert.match(page, /tempo=run\.phase==="battle"\?132:235/);
+  assert.match(page, /run\.battle\?\.boss\?"boss":"battle"/);
   assert.match(page, /const list=gear\.filter\(g=>g\.kind===kind\)\.sort/);
   assert.match(page, /forge=Math\.floor\(run\.floor\/20\)/);
   assert.match(page, /variant-\$\{Math\.floor\(run\.floor\/30\)%4\}/);
