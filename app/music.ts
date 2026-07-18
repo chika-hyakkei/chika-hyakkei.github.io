@@ -51,13 +51,11 @@ export function startGameTheme(context: AudioContext, theme: GameTheme) {
 export function startOpeningTheme(context: AudioContext) {
   const bus = createBus(context,.18), melody=[0,0,220,0,247,0,262,0,220,0,196,0,0,0,0,0,220,247,262,294,262,247,220,196,247,262,294,330,294,262,247,0,262,294,330,349,330,294,262,247,294,330,392,330,294,262,247,0,330,349,392,440,392,349,330,294,262,294,330,392,349,330,294,0], roots=[110,110,110,110,98,98,98,98,87,87,87,87,98,98,110,110], thirds=[131,131,131,131,123,123,123,123,110,110,110,110,123,123,131,131];
   let step=0,timer=0,stopped=false;
-  const tick=()=>{if(stopped)return;const when=context.currentTime+.03,i=step%melody.length,section=Math.floor(i/16),note=melody[i],root=roots[Math.floor(i/4)%roots.length],third=thirds[Math.floor(i/4)%thirds.length];
-    playTone(context,bus.master,note,.13,section<2 ? .046 : .07,"triangle",when);
+  const tick=()=>{if(stopped)return;const when=context.currentTime+.03,i=step%melody.length,note=melody[i],root=roots[Math.floor(i/4)%roots.length],third=thirds[Math.floor(i/4)%thirds.length];
+    playTone(context,bus.master,note,.13,.057,"triangle",when);
     if(i%4===0){playTone(context,bus.master,root,.56,.053,"sine",when);playTone(context,bus.master,third,.56,.024,"sine",when);playTone(context,bus.master,root*1.5,.56,.018,"triangle",when);}
-    if(section>=1&&note)playTone(context,bus.master,note/2,.17,.026,"triangle",when+.03);
-    if(section>=2&&note)playTone(context,bus.master,note*2,.08,.018,"square",when+.045);
-    if(section===3&&i%4===0)lowPulse(context,bus.master,when,.055);
-    step=(step+1)%melody.length;timer=window.setTimeout(tick,section===0?185:section===1?165:145);
+    if(note)playTone(context,bus.master,note/2,.17,.023,"triangle",when+.03);
+    step=(step+1)%melody.length;timer=window.setTimeout(tick,165);
   };
   tick();return()=>{stopped=true;window.clearTimeout(timer);bus.stop();};
 }
