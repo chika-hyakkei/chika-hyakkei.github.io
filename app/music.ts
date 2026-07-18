@@ -1,12 +1,12 @@
 export type GameTheme = "dungeon" | "battle" | "boss" | "shop" | "death";
 
-type Track = { melody: number[]; bass: number[]; chords: number[][]; stepMs: number; lead: OscillatorType; heavy?: boolean };
+type Track = { melody: number[]; bass: number[]; chords: number[][]; counter?: number[]; stepMs: number; lead: OscillatorType; heavy?: boolean };
 
 // 既存BGMの主旋律・テンポは維持し、下支えの音だけを追加する。
 const tracks: Record<GameTheme, Track> = {
   dungeon: { melody: [110,0,165,196,147,0,165,131], bass: [55,0,55,0,49,0,55,0], chords: [[110,131,165],[98,123,147],[87,110,131],[98,123,165]], stepMs: 235, lead: "square" },
   battle: { melody: [82,110,87,123,73,116,92,131,82,104,78,117], bass: [41,41,43,43,37,37,46,46,41,41,39,39], chords: [[82,98,123],[87,104,131],[73,92,116],[82,98,131]], stepMs: 132, lead: "sawtooth" },
-  boss: { melody: [164,0,196,220,174,0,196,247,164,196,220,262,247,220,196,0], bass: [41,0,41,41,37,0,37,46,41,41,41,49,46,41,37,0], chords: [[82,123,164],[73,110,147],[82,123,164],[98,147,196]], stepMs: 158, lead: "square" },
+  boss: { melody: [82,110,87,123,73,116,92,131,82,104,78,117], bass: [41,41,43,43,37,37,46,46,41,41,39,39], chords: [[82,98,123],[87,104,131],[73,92,116],[82,98,131]], counter: [0,0,123,0,110,0,131,0,98,0,110,0], stepMs: 168, lead: "sawtooth", heavy: true },
   shop: { melody: [220,277,330,277,247,330,277,220], bass: [110,0,139,0,123,0,110,0], chords: [[220,277,330],[247,294,370],[196,247,294],[220,277,330]], stepMs: 190, lead: "square" },
   death: { melody: [165,147,131,110,98,82,73,0], bass: [55,0,49,0,41,0,37,0], chords: [[165,196,247],[147,175,220],[131,165,196],[110,131,165]], stepMs: 260, lead: "triangle" },
 };
@@ -33,11 +33,12 @@ function lowPulse(context: AudioContext, destination: AudioNode, when: number, l
 
 export function startGameTheme(context: AudioContext, theme: GameTheme) {
   const track = tracks[theme], bus = createBus(context, theme === "boss" ? .19 : .15); let step = 0, timer = 0, stopped = false;
-  const tick = () => { if (stopped) return; const when = context.currentTime + .03, i = step % track.melody.length, beat = i % 4, note = track.melody[i], bass = track.bass[i], chord = track.chords[Math.floor(i / 2) % track.chords.length], lap = Math.floor(step / track.melody.length) % 4;
+  const tick = () => { if (stopped) return; const when = context.currentTime + .03, i = step % track.melody.length, beat = i % 4, note = track.melody[i], bass = track.bass[i], counter = track.counter?.[i % track.counter.length]??0, chord = track.chords[Math.floor(i / 2) % track.chords.length], lap = Math.floor(step / track.melody.length) % 4;
     // 先に従来のメロディ、次に重心となる低音、最後に控えめな和音を置く。
     playTone(context,bus.master,note,track.stepMs/1000*.78,.061,track.lead,when);
     if(note) playTone(context,bus.master,note,track.stepMs/1000*.72,.015,"square",when,7);
     playTone(context,bus.master,bass,track.stepMs/1000*.92,theme === "shop" ? .028 : .045,"triangle",when);
+    if(counter) playTone(context,bus.master,counter,track.stepMs/1000*1.3,.026,"triangle",when+.03);
     if(beat===0) chord.forEach((frequency,index)=>playTone(context,bus.master,frequency,track.stepMs/1000*3.45,.011-index*.0015,"sine",when+.012));
     if(lap>=1&&note) playTone(context,bus.master,note/2,track.stepMs/1000*.64,.019,"sine",when+.042);
     if(lap>=2&&note) playTone(context,bus.master,note*2,track.stepMs/1000*.34,.014,"triangle",when+.02);
