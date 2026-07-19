@@ -16,4 +16,8 @@ npm run dev
 npm test
 ```
 
-GitHub Pages向けの静的出力は `npm run build:pages` で生成します。
+GitHub Pages向けの静的出力は `npm run build:pages` で `site/` に生成します。
+
+## 開発資料
+
+長期開発の作業ルールは [AGENTS.md](AGENTS.md) を参照してください。現在地、仕様、保存形式、設計判断、課題は [docs/](docs/) に記録します。作業再開時はまず [docs/now.md](docs/now.md) を確認します。

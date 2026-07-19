@@ -7,10 +7,10 @@
 1. Cloudflare に無料登録し、PCでこのリポジトリを開く。
 2. `npm exec wrangler login` を一度だけ実行してブラウザで許可する。
 3. `npm exec wrangler d1 create chika-hyakkei-ranking` を実行する。
-4. 表示された `database_id` を `wrangler.jsonc` の `REPLACE_WITH_D1_DATABASE_ID` に貼る。
+4. 表示された `database_id` を `wrangler.jsonc` に貼る。
 5. `npm exec wrangler d1 migrations apply chika-hyakkei-ranking --remote` を実行する。
 6. `npm exec wrangler deploy` を実行する。表示された `https://...workers.dev` が API の住所。
-7. `public/ranking-config.js` の空文字を、その API の住所に変更して GitHub Pages を公開する。
+7. `public/ranking-config.js` を、その API の住所に変更して GitHub Pages を公開する。
 
 無料枠を超えても、Free プランは自動課金されず API が止まるだけです。小規模なランキング用途なら無料枠で十分です。
 

@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 
 const root = process.cwd();
 const clientDir = resolve(root, "dist/client");
-const outputDir = resolve(root, "docs");
+const outputDir = resolve(root, "site");
 
 await mkdir(outputDir, { recursive: true });
 await cp(clientDir, outputDir, { recursive: true, force: true });
@@ -20,4 +20,4 @@ if (!html.includes("地下百景")) throw new Error("Static export did not conta
 
 await writeFile(resolve(outputDir, "index.html"), html);
 await writeFile(resolve(outputDir, ".nojekyll"), "");
-console.log("GitHub Pages files written to docs/");
+console.log("GitHub Pages files written to site/");

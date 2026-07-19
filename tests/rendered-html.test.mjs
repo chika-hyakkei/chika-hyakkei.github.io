@@ -80,9 +80,11 @@ test("includes a static GitHub Pages deployment path", async () => {
   const workflow = await readFile(new URL("../.github/workflows/deploy-pages.yml", import.meta.url), "utf8");
   assert.match(script, /dist\/client/);
   assert.match(script, /resolve\(outputDir, "index\.html"\)/);
+  assert.match(script, /resolve\(root, "site"\)/);
   assert.match(script, /\.nojekyll/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
   assert.match(workflow, /npm run build:pages/);
+  assert.match(workflow, /path: site/);
 });
 
 test("defines the hundred-monster catalog", async () => {

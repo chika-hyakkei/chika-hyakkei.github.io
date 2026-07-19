@@ -37,7 +37,17 @@ yarn-error.log*
 # typescript
 next-env.d.ts
 /dist/
-/docs/
+/site/
+/docs/.assetsignore
+/docs/.nojekyll
+/docs/.vite/
+/docs/_headers
+/docs/assets/
+/docs/index.html
+/docs/*.svg
+/docs/*.png
+/docs/*.js
+/docs/*.css
 /.wrangler/
 /outputs/
 /work/
