@@ -14,3 +14,4 @@
 .opening-preview{width:100%;margin-top:16px;border-color:#a88942;background:linear-gradient(90deg,#252418,#3e3420);color:#f0d58e;font-weight:bold;letter-spacing:.12em}.opening-preview:hover:not(:disabled),.opening-preview:focus-visible{background:#514025}.opening-note{display:block;margin:6px 0 -3px;text-align:center;font-size:.54rem;color:#9ca89c;letter-spacing:.08em}
 .opening-preview,.opening-note{display:none}
 .tile.tap-target{cursor:pointer}.tile.tap-target:hover,.tile.tap-target:focus-visible{box-shadow:inset 0 0 0 2px var(--gold);outline:none}
+.webgame-vote{display:flex;align-items:center;line-height:0}.webgame-vote img{display:block;max-width:112px;height:auto}.webgame-vote:focus-visible{outline:2px solid var(--gold);outline-offset:2px}@media(max-width:430px){.webgame-vote img{max-width:92px}}
