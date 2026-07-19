@@ -6,7 +6,7 @@
     {
       "binding": "DB",
       "database_name": "chika-hyakkei-ranking",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "3ec149fd-eeba-4fe8-ac3e-1dbcc6b1c6ee",
       "migrations_dir": "migrations"
     }
   ],
