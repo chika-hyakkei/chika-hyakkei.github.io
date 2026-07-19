@@ -9,4 +9,4 @@ export const metadata: Metadata = {
   openGraph: { title: "地下百景｜無限ダンジョンRPG", description: "倒れれば、すべてを失う。", type: "website", locale: "ja_JP", images: [{url:"/og.png",width:1200,height:630,alt:"地下百景"}] },
   twitter: { card: "summary_large_image", title: "地下百景", description: "倒れれば、すべてを失う。", images: ["/og.png"] },
 };
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="ja"><body>{children}</body></html>;}
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="ja"><head><script src="/ranking-config.js" /></head><body>{children}</body></html>;}
