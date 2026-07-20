@@ -110,3 +110,10 @@ test("shows a compact weekly podium and documented update history", async () => 
   assert.match(page, /持ち物がいっぱい/);
   assert.match(updates, /記録の掲示板/);
 });
+
+test("uses the dedicated title logo in the header", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /className="site-logo"/);
+  assert.match(page, /src="\/assets\/title-logo\.webp"/);
+  assert.match(page, /Endless Dungeon RPG 地下百景/);
+});
