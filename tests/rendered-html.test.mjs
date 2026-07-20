@@ -100,3 +100,13 @@ test("defines the hundred-item catalog", async () => {
   assert.match(items, /weaponFamilies\.flatMap/);
   assert.match(items, /armorFamilies\.flatMap/);
 });
+
+test("shows a compact weekly podium and documented update history", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const updates = await readFile(new URL("../app/updates.ts", import.meta.url), "utf8");
+  assert.match(page, /WEEKLY TOP 3/);
+  assert.match(page, /UPDATE_NOTES/);
+  assert.match(page, /shopBlocked/);
+  assert.match(page, /持ち物がいっぱい/);
+  assert.match(updates, /記録の掲示板/);
+});

@@ -29,7 +29,7 @@
 
 ## 公開
 
-ゲーム本体は静的出力する。`npm run build:pages` が `docs/` を生成し、GitHub ActionsがそれをGitHub Pagesへ公開する。
+ゲーム本体は静的出力する。`npm run build:pages` が `site/` を生成し、GitHub ActionsがそれをGitHub Pagesへ公開する。`docs/` は長期開発資料専用であり、公開ビルドの出力先にしない。
 
 ランキングAPIはゲーム本体と別にCloudflare Workersへ公開する。WorkerのURLは `public/ranking-config.js` にだけ保持し、UIコードへ直書きしない。
 
