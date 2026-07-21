@@ -101,6 +101,14 @@ test("defines the hundred-item catalog", async () => {
   assert.match(items, /armorFamilies\.flatMap/);
 });
 
+test("opens item and monster lists from the game UI", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /ITEM ARCHIVE/);
+  assert.match(page, /アイテムリスト/);
+  assert.match(page, /モンスター/);
+  assert.match(page, /ITEM_CATALOG\.length\}\/100/);
+});
+
 test("shows a compact weekly podium and documented update history", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const updates = await readFile(new URL("../app/updates.ts", import.meta.url), "utf8");
