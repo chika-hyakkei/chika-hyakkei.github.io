@@ -26,7 +26,7 @@
 | `app/ranking.ts` | ランキングの取得・任意送信 |
 | `app/layout.tsx` | ランキング設定とCloudflare Web Analytics beaconの読込 |
 | `public/ranking-config.js` | ゲームから使うランキングAPI URL |
-| `ranking-api/` | Cloudflare Worker・D1移行SQL |
+| `ranking-api/` | Cloudflare Worker・D1の終了記録ランキングと移行SQL |
 | `.github/workflows/deploy-pages.yml` | GitHub Pages公開 |
 
 ## 公開

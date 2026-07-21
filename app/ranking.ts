@@ -1,5 +1,6 @@
 export type RankingScope = "weekly" | "all";
 export type RankingEntry = {
+  id: string;
   rank: number;
   name: string;
   job: string;
@@ -7,11 +8,12 @@ export type RankingEntry = {
   score: number;
   kills: number;
   bosses: number;
-  result: "dead" | "return" | "clear";
+  result: "dead" | "return" | "abandon" | "clear";
   playedAt: string;
+  highlighted?: boolean;
 };
 
-export type RankingSubmission = Omit<RankingEntry, "rank" | "playedAt"> & { playerId: string };
+export type RankingSubmission = Omit<RankingEntry, "id" | "rank" | "playedAt" | "highlighted"> & { playerId: string };
 
 declare global {
   interface Window { __CHIKA_RANKING_API_URL__?: string }
@@ -27,10 +29,12 @@ export function rankingPlayerId() {
   return id;
 }
 
-export async function loadRanking(scope: RankingScope) {
+export async function loadRanking(scope: RankingScope, highlightId?: string | null) {
   const base = endpoint();
   if (!base) throw new Error("ランキングサーバーは準備中です。");
-  const response = await fetch(`${base}/leaderboard?scope=${scope}`, { headers: { accept: "application/json" } });
+  const query = new URLSearchParams({ scope });
+  if (highlightId) query.set("highlight", highlightId);
+  const response = await fetch(`${base}/leaderboard?${query}`, { headers: { accept: "application/json" } });
   if (!response.ok) throw new Error("ランキングを読み込めませんでした。");
   const body = await response.json() as { entries?: RankingEntry[] };
   return body.entries ?? [];
@@ -44,4 +48,5 @@ export async function submitRanking(submission: RankingSubmission) {
     const body = await response.json().catch(() => null) as { error?: string } | null;
     throw new Error(body?.error ?? "記録を送信できませんでした。");
   }
+  return response.json() as Promise<{ entryId: string }>;
 }
