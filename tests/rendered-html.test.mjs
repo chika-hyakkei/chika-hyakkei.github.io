@@ -117,3 +117,11 @@ test("uses the dedicated title logo in the header", async () => {
   assert.match(page, /src="\/assets\/title-logo\.webp"/);
   assert.match(page, /Endless Dungeon RPG 地下百景/);
 });
+
+test("includes the documented anonymous web analytics beacon", async () => {
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(layout, /static\.cloudflareinsights\.com\/beacon\.min\.js/);
+  assert.match(layout, /data-cf-beacon/);
+  assert.match(page, /匿名のアクセス集計を使用しています/);
+});

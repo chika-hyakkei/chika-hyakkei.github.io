@@ -9,6 +9,7 @@
   ├─ GitHub Pages: React/Vinext のゲーム本体
   │   ├─ localStorage: 冒険・メタ進行・匿名テスト記録
   │   └─ 任意送信: ランキング API
+  │   └─ 匿名集計: Cloudflare Web Analytics beacon
   └─ Cloudflare Worker: ランキング API
       └─ Cloudflare D1: 自己ベストランキング
 ```
@@ -23,6 +24,7 @@
 | `app/music.ts` | Web AudioによるBGM |
 | `app/telemetry.ts` | 端末内だけの匿名テスト記録 |
 | `app/ranking.ts` | ランキングの取得・任意送信 |
+| `app/layout.tsx` | ランキング設定とCloudflare Web Analytics beaconの読込 |
 | `public/ranking-config.js` | ゲームから使うランキングAPI URL |
 | `ranking-api/` | Cloudflare Worker・D1移行SQL |
 | `.github/workflows/deploy-pages.yml` | GitHub Pages公開 |
@@ -32,6 +34,8 @@
 ゲーム本体は静的出力する。`npm run build:pages` が `site/` を生成し、GitHub ActionsがそれをGitHub Pagesへ公開する。`docs/` は長期開発資料専用であり、公開ビルドの出力先にしない。
 
 ランキングAPIはゲーム本体と別にCloudflare Workersへ公開する。WorkerのURLは `public/ranking-config.js` にだけ保持し、UIコードへ直書きしない。
+
+Web AnalyticsはGitHub PagesにCloudflareの計測beaconを直接読み込ませる。ゲームの行動・セーブ・名前は送らず、ページ訪問の匿名集計だけをCloudflareダッシュボードで確認する。
 
 ## 境界
 

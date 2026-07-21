@@ -18,6 +18,7 @@
 - 任意送信の週間・総合オンラインランキング
 - タイトル画面の最新更新要約と週間ランキングTOP3
 - 左上のロゴ画像（`public/assets/title-logo.webp`）
+- Cloudflare Web Analyticsによる匿名のアクセス集計
 
 ## 直近の注意
 
