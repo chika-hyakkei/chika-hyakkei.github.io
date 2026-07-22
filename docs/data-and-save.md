@@ -15,6 +15,7 @@
 | `chika-hyakkei-meta-backup-v1` | Metaを書き換える直前の正常値 | 図鑑・熟練度など恒久記録の1世代バックアップ |
 | `chika-hyakkei-meta-quarantine-v1` | 読み込めなかったMetaの原文 | 自動削除せず、調査・手動復旧用に保持する |
 | `chika-hyakkei-test-record-v1` | 端末限定の匿名テスト記録 | 自動送信しない |
+| `chika-hyakkei-onboarding-v1` | 初回案内5項目の確認済み状態 | Run・Metaと分離し、案内の再表示で安全に初期化できる |
 | `chika-hyakkei-ranking-player-v1` | ランキング自己ベストを識別する匿名ID | 公開名・メールアドレスではない |
 | `chika-hyakkei-ranking-pending-v1` | 送信に失敗した終了記録（最大20件） | 接続可能な次回起動時に同じIDで再送する |
 

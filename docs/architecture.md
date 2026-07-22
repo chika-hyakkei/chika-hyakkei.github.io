@@ -23,6 +23,7 @@
 | `app/monsters.ts` | 100体の魔物カタログ |
 | `app/items.ts` | 100アイテムのカタログ |
 | `app/music.ts` | Web AudioによるBGM |
+| `app/onboarding.ts` | 初回案内の進捗補完と、現在状況から次に出す案内の判定 |
 | `app/telemetry.ts` | 端末内だけの匿名テスト記録 |
 | `app/ranking.ts` | ランキングの取得、自動送信、送信待ちキューと再送 |
 | `app/layout.tsx` | ランキング設定とCloudflare Web Analytics beaconの読込 |

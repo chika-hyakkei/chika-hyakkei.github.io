@@ -162,3 +162,17 @@ test("uses compact ten-facet jewel gauges for player HP and MP", async () => {
   assert.match(css, /\.gem-track\{display:grid;grid-template-columns:repeat\(10/);
   assert.match(css, /\.battle-player-vitals/);
 });
+
+test("guides the first ten minutes without hiding combat state", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
+  assert.match(page, /nextGuideStep\(guideProgress/);
+  assert.match(page, /FIRST DESCENT/);
+  assert.match(page, /案内をもう一度/);
+  assert.match(page, /function StatusBadges/);
+  assert.match(page, /残り\$\{status\.turns\}ターン/);
+  assert.match(page, /MP \{cost\}\{unavailable\?"・不足"/);
+  assert.match(page, /階層主から逃走不可/);
+  assert.match(css, /\.guide-tip\{position:fixed/);
+  assert.match(css, /\.battle-actions button\.unavailable/);
+});
