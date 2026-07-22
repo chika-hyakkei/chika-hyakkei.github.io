@@ -20,4 +20,4 @@ GitHub Pages向けの静的出力は `npm run build:pages` で `site/` に生成
 
 ## 開発資料
 
-長期開発の作業ルールは [AGENTS.md](AGENTS.md) を参照してください。現在地、仕様、保存形式、設計判断、課題は [docs/](docs/) に記録します。作業再開時はまず [docs/now.md](docs/now.md) を確認します。
+長期開発の作業ルールは [AGENTS.md](AGENTS.md) を参照してください。現在地、仕様、保存形式、設計判断、課題は [docs/](docs/) に記録します。作業再開時はまず [docs/now.md](docs/now.md) を確認します。80点相当の完成度へ向けた実装順と合格基準は [docs/roadmap-80.md](docs/roadmap-80.md) を正とします。
