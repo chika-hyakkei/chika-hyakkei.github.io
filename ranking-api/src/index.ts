@@ -28,12 +28,9 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers });
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/leaderboard") {
-      const weekly = url.searchParams.get("scope") !== "all";
       const highlight = url.searchParams.get("highlight") ?? "";
-      const where = weekly ? "WHERE week_key = ?" : "";
-      const query = `SELECT id, display_name name, job, floor, score, kills, bosses, result, played_at playedAt FROM ranking_runs ${where} ORDER BY score DESC, floor DESC, played_at ASC LIMIT 100`;
-      const statement = weekly ? env.DB.prepare(query).bind(weekKey(new Date())) : env.DB.prepare(query);
-      const { results = [] } = await statement.all<Record<string, unknown>>();
+      const query = "SELECT id, display_name name, job, floor, score, kills, bosses, result, played_at playedAt FROM ranking_runs ORDER BY score DESC, floor DESC, played_at ASC LIMIT 100";
+      const { results = [] } = await env.DB.prepare(query).all<Record<string, unknown>>();
       return text({ entries: results.map((entry, index) => ({ rank: index + 1, ...entry, highlighted: String(entry.id) === highlight })) }, 200, headers);
     }
     if (request.method === "POST" && url.pathname === "/submit") {

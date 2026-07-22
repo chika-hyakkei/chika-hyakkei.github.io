@@ -1,4 +1,3 @@
-export type RankingScope = "weekly" | "all";
 export type RankingEntry = {
   id: string;
   rank: number;
@@ -45,10 +44,10 @@ export const queueRanking = (submission: RankingSubmission) => {
 };
 const removeQueuedRanking = (submissionId: string) => writePendingRankings(pendingRankings().filter(entry=>entry.submissionId!==submissionId));
 
-export async function loadRanking(scope: RankingScope, highlightId?: string | null) {
+export async function loadRanking(highlightId?: string | null) {
   const base = endpoint();
   if (!base) throw new Error("ランキングサーバーは準備中です。");
-  const query = new URLSearchParams({ scope });
+  const query = new URLSearchParams();
   if (highlightId) query.set("highlight", highlightId);
   const response = await fetch(`${base}/leaderboard?${query}`, { headers: { accept: "application/json" } });
   if (!response.ok) throw new Error("ランキングを読み込めませんでした。");

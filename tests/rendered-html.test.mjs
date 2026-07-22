@@ -109,10 +109,11 @@ test("opens item and monster lists from the game UI", async () => {
   assert.match(page, /ITEM_CATALOG\.length\}\/100/);
 });
 
-test("shows a compact weekly podium and documented update history", async () => {
+test("shows a compact all-time podium and documented update history", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const updates = await readFile(new URL("../app/updates.ts", import.meta.url), "utf8");
-  assert.match(page, /WEEKLY TOP 3/);
+  assert.match(page, /ALL-TIME TOP 3/);
+  assert.doesNotMatch(page, />今週<|setRankingScope|loadRanking\("weekly"\)/);
   assert.match(page, /UPDATE_NOTES/);
   assert.match(page, /shopBlocked/);
   assert.match(page, /持ち物がいっぱい/);
@@ -140,12 +141,13 @@ test("preserves the core end, chest, shop, save recovery, and ranking retry path
   const worker = await readFile(new URL("../ranking-api/src/index.ts", import.meta.url), "utf8");
   const migration = await readFile(new URL("../ranking-api/migrations/0003_ranking_submission_id.sql", import.meta.url), "utf8");
   for (const reason of ["dead", "return", "abandon", "clear"]) assert.match(page, new RegExp(`reason===\\"${reason}\\"|finish\\(\\"${reason}\\"`));
-  assert.match(page, /setResult\(finished\);setRun\(null\)/);
+  assert.match(page, /finalizeRunViewState\(reason,current,total,newly\)/);
   assert.match(page, /inventory\.length>=8.*gold:g\.gold\+12/s);
   assert.match(page, /old&&run\.inventory\.length>=8.*先に捨てるか売ろう.*return/s);
   assert.match(page, /loadRecoverable\(localStorage,RUN_KEY,RUN_BACKUP_KEY,RUN_QUARANTINE_KEY,normalizeRun\)/);
   assert.match(page, /submitRankingReliably\(\{submissionId:crypto\.randomUUID\(\)/);
   assert.match(ranking, /queueRanking\(submission\).*submitRanking\(submission\).*removeQueuedRanking/s);
   assert.match(worker, /INSERT OR IGNORE INTO ranking_runs/);
+  assert.doesNotMatch(worker, /WHERE week_key =/);
   assert.match(migration, /CREATE UNIQUE INDEX ranking_runs_submission_id/);
 });

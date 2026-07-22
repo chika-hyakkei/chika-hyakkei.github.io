@@ -37,3 +37,19 @@ test("backs up the previous valid state before saving and clears both active cop
   assert.equal(storage.getItem("run"), null);
   assert.equal(storage.getItem("backup"), null);
 });
+
+test("round-trips battle, shop, and post-floor-move saves", () => {
+  const normalizePhase = value => value && typeof value === "object" && ["battle", "shop", "explore"].includes(value.phase) && Number.isInteger(value.floor) ? value : null;
+  const snapshots = [
+    { phase: "battle", floor: 18, hp: 31, battle: { name: "呪染の影", hp: 42 }, pendingEnemyTurn: { message: "防御の構え。" } },
+    { phase: "shop", floor: 21, hp: 44, shopPotionAvailable: true, gold: 88 },
+    { phase: "explore", floor: 22, hp: 51, mp: 13, message: "地下22階。空気がさらに重くなった。" },
+  ];
+  for (const [index, snapshot] of snapshots.entries()) {
+    const storage = new MemoryStorage();
+    saveRecoverable(storage, "run", "backup", snapshot, normalizePhase);
+    const loaded = loadRecoverable(storage, "run", "backup", `bad-${index}`, normalizePhase);
+    assert.equal(loaded.source, "current");
+    assert.deepEqual(loaded.value, snapshot);
+  }
+});
