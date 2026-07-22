@@ -151,3 +151,14 @@ test("preserves the core end, chest, shop, save recovery, and ranking retry path
   assert.doesNotMatch(worker, /WHERE week_key =/);
   assert.match(migration, /CREATE UNIQUE INDEX ranking_runs_submission_id/);
 });
+
+test("uses compact ten-facet jewel gauges for player HP and MP", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
+  assert.match(page, /function GemGauge/);
+  assert.match(page, /Array\.from\(\{length:10\}/);
+  assert.match(page, /<GemGauge kind="hp"/);
+  assert.match(page, /<GemGauge kind="mp"/);
+  assert.match(css, /\.gem-track\{display:grid;grid-template-columns:repeat\(10/);
+  assert.match(css, /\.battle-player-vitals/);
+});
