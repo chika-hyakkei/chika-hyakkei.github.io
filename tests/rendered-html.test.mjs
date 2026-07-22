@@ -176,3 +176,18 @@ test("guides the first ten minutes without hiding combat state", async () => {
   assert.match(css, /\.guide-tip\{position:fixed/);
   assert.match(css, /\.battle-actions button\.unavailable/);
 });
+
+test("connects monster tactics to combat and progressive bestiary knowledge", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const monsters = await readFile(new URL("../app/monsters.ts", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
+  for (const mechanic of ["split","multiHit","drain","steal","shell","curseCounter","fireAbsorb","frenzy","blind"]) assert.match(monsters,new RegExp(`\\b${mechanic}\\b`));
+  assert.match(page, /damageMultiplierFor\(record,damageKind\)/);
+  assert.match(page, /苔スライムが分裂/);
+  assert.match(page, /炎を吸収/);
+  assert.match(page, /防御で効果を1ターンに抑えた/);
+  assert.match(page, /kills>=3/);
+  assert.match(page, /kills>=5/);
+  assert.match(page, /固有の兆候/);
+  assert.match(css, /\.enemy-tactic\{/);
+});
