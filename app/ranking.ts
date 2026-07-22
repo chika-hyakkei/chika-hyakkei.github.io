@@ -13,7 +13,9 @@ export type RankingEntry = {
   highlighted?: boolean;
 };
 
-export type RankingSubmission = Omit<RankingEntry, "id" | "rank" | "playedAt" | "highlighted"> & { playerId: string };
+export type RankingSubmission = Omit<RankingEntry, "id" | "rank" | "playedAt" | "highlighted"> & { playerId: string; submissionId: string };
+
+export const PENDING_RANKING_KEY = "chika-hyakkei-ranking-pending-v1";
 
 declare global {
   interface Window { __CHIKA_RANKING_API_URL__?: string }
@@ -28,6 +30,20 @@ export function rankingPlayerId() {
   if (!id) { id = crypto.randomUUID(); localStorage.setItem(key, id); }
   return id;
 }
+
+const pendingRankings = () => {
+  try {
+    const value = JSON.parse(localStorage.getItem(PENDING_RANKING_KEY) ?? "[]") as unknown;
+    return Array.isArray(value) ? value.filter((entry): entry is RankingSubmission => Boolean(entry && typeof entry === "object" && typeof (entry as RankingSubmission).submissionId === "string")) : [];
+  } catch { return []; }
+};
+
+const writePendingRankings = (entries: RankingSubmission[]) => localStorage.setItem(PENDING_RANKING_KEY, JSON.stringify(entries.slice(-20)));
+export const queueRanking = (submission: RankingSubmission) => {
+  const entries = pendingRankings();
+  if (!entries.some(entry=>entry.submissionId===submission.submissionId)) writePendingRankings([...entries,submission]);
+};
+const removeQueuedRanking = (submissionId: string) => writePendingRankings(pendingRankings().filter(entry=>entry.submissionId!==submissionId));
 
 export async function loadRanking(scope: RankingScope, highlightId?: string | null) {
   const base = endpoint();
@@ -49,4 +65,20 @@ export async function submitRanking(submission: RankingSubmission) {
     throw new Error(body?.error ?? "記録を送信できませんでした。");
   }
   return response.json() as Promise<{ entryId: string }>;
+}
+
+export async function submitRankingReliably(submission: RankingSubmission) {
+  queueRanking(submission);
+  const recorded = await submitRanking(submission);
+  removeQueuedRanking(submission.submissionId);
+  return recorded;
+}
+
+export async function flushPendingRankings() {
+  let sent = 0;
+  for (const submission of pendingRankings()) {
+    try { await submitRanking(submission); removeQueuedRanking(submission.submissionId); sent++; }
+    catch { break; }
+  }
+  return { sent, remaining: pendingRankings().length };
 }

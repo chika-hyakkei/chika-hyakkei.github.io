@@ -133,3 +133,19 @@ test("includes the documented anonymous web analytics beacon", async () => {
   assert.match(layout, /data-cf-beacon/);
   assert.match(page, /匿名のアクセス集計を使用しています/);
 });
+
+test("preserves the core end, chest, shop, save recovery, and ranking retry paths", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const ranking = await readFile(new URL("../app/ranking.ts", import.meta.url), "utf8");
+  const worker = await readFile(new URL("../ranking-api/src/index.ts", import.meta.url), "utf8");
+  const migration = await readFile(new URL("../ranking-api/migrations/0003_ranking_submission_id.sql", import.meta.url), "utf8");
+  for (const reason of ["dead", "return", "abandon", "clear"]) assert.match(page, new RegExp(`reason===\\"${reason}\\"|finish\\(\\"${reason}\\"`));
+  assert.match(page, /setResult\(finished\);setRun\(null\)/);
+  assert.match(page, /inventory\.length>=8.*gold:g\.gold\+12/s);
+  assert.match(page, /old&&run\.inventory\.length>=8.*先に捨てるか売ろう.*return/s);
+  assert.match(page, /loadRecoverable\(localStorage,RUN_KEY,RUN_BACKUP_KEY,RUN_QUARANTINE_KEY,normalizeRun\)/);
+  assert.match(page, /submitRankingReliably\(\{submissionId:crypto\.randomUUID\(\)/);
+  assert.match(ranking, /queueRanking\(submission\).*submitRanking\(submission\).*removeQueuedRanking/s);
+  assert.match(worker, /INSERT OR IGNORE INTO ranking_runs/);
+  assert.match(migration, /CREATE UNIQUE INDEX ranking_runs_submission_id/);
+});

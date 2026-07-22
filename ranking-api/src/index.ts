@@ -1,7 +1,7 @@
 export interface Env { DB: D1Database; ALLOWED_ORIGIN?: string }
 
 type Result = "dead" | "return" | "abandon" | "clear";
-type Submission = { playerId: string; name: string; job: string; floor: number; score: number; kills: number; bosses: number; result: Result };
+type Submission = { submissionId?: string; playerId: string; name: string; job: string; floor: number; score: number; kills: number; bosses: number; result: Result };
 
 const jobs = new Set(["warrior", "thief", "priest", "mage", "knight", "sage"]);
 const text = (body: unknown, status = 200, extra: HeadersInit = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...extra } });
@@ -10,7 +10,8 @@ const cors = (request: Request, env: Env) => ({ "access-control-allow-origin": r
 const valid = (value: unknown): value is Submission => {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
-  return typeof v.playerId === "string" && /^[a-f0-9-]{20,64}$/i.test(v.playerId)
+  return (v.submissionId === undefined || typeof v.submissionId === "string" && /^[a-f0-9-]{20,64}$/i.test(v.submissionId))
+    && typeof v.playerId === "string" && /^[a-f0-9-]{20,64}$/i.test(v.playerId)
     && typeof v.name === "string" && Array.from(v.name.trim()).length >= 1 && Array.from(v.name.trim()).length <= 8
     && typeof v.job === "string" && jobs.has(v.job)
     && [v.floor, v.score, v.kills, v.bosses].every(Number.isInteger)
@@ -39,10 +40,12 @@ export default {
       if (request.headers.get("origin") !== (env.ALLOWED_ORIGIN ?? "https://chika-hyakkei.github.io")) return text({ error: "このサイトからのみ送信できます。" }, 403, headers);
       const data = await request.json().catch(() => null);
       if (!valid(data)) return text({ error: "記録の形式が正しくありません。" }, 400, headers);
-      const input = { ...data, name: data.name.trim() };
+      const input = { ...data, submissionId: data.submissionId ?? crypto.randomUUID(), name: data.name.trim() };
       const playedAt = new Date().toISOString(), week = weekKey(new Date());
-      const created = await env.DB.prepare("INSERT INTO ranking_runs (player_id, display_name, job, floor, score, kills, bosses, result, played_at, week_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(input.playerId, input.name, input.job, input.floor, input.score, input.kills, input.bosses, input.result, playedAt, week).run();
-      return text({ ok: true, entryId: String(created.meta.last_row_id) }, 200, headers);
+      await env.DB.prepare("INSERT OR IGNORE INTO ranking_runs (submission_id, player_id, display_name, job, floor, score, kills, bosses, result, played_at, week_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(input.submissionId, input.playerId, input.name, input.job, input.floor, input.score, input.kills, input.bosses, input.result, playedAt, week).run();
+      const stored = await env.DB.prepare("SELECT id FROM ranking_runs WHERE submission_id = ?").bind(input.submissionId).first<{ id: number }>();
+      if (!stored) return text({ error: "記録を保存できませんでした。" }, 500, headers);
+      return text({ ok: true, entryId: String(stored.id) }, 200, headers);
     }
     return text({ error: "見つかりません。" }, 404, headers);
   },
