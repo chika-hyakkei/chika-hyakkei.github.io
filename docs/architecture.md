@@ -24,6 +24,7 @@
 | `app/items.ts` | 100アイテムのカタログ |
 | `app/music.ts` | Web AudioによるBGM |
 | `app/onboarding.ts` | 初回案内の進捗補完と、現在状況から次に出す案内の判定 |
+| `app/i18n.ts` | 日本語・英語の翻訳辞書、端末言語判定、日本語フォールバック、言語非依存の地下依頼ID |
 | `app/telemetry.ts` | 端末内だけの匿名テスト記録 |
 | `app/ranking.ts` | ランキングの取得、自動送信、送信待ちキューと再送 |
 | `app/layout.tsx` | ランキング設定とCloudflare Web Analytics beaconの読込 |
@@ -38,6 +39,8 @@
 ランキングAPIはゲーム本体と別にCloudflare Workersへ公開する。WorkerのURLは `public/ranking-config.js` にだけ保持し、UIコードへ直書きしない。
 
 Web AnalyticsはGitHub PagesにCloudflareの計測beaconを直接読み込ませる。ゲームの行動・セーブ・名前は送らず、ページ訪問の匿名集計だけをCloudflareダッシュボードで確認する。
+
+表示言語は端末内設定として保存する。画面は翻訳キーから文言を取得し、英語辞書に未登録のキーは日本語へ戻す。言語切替はRun・Meta・ランキング値を変更しない。
 
 ## 境界
 

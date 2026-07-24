@@ -16,6 +16,7 @@
 | `chika-hyakkei-meta-quarantine-v1` | 読み込めなかったMetaの原文 | 自動削除せず、調査・手動復旧用に保持する |
 | `chika-hyakkei-test-record-v1` | 端末限定の匿名テスト記録 | 自動送信しない |
 | `chika-hyakkei-onboarding-v1` | 初回案内5項目の確認済み状態 | Run・Metaと分離し、案内の再表示で安全に初期化できる |
+| `chika-hyakkei-locale-v1` | 表示言語 `ja` / `en` | 未設定時は端末言語を判定。対応外・不正値は日本語へ戻す |
 | `chika-hyakkei-ranking-player-v1` | ランキング自己ベストを識別する匿名ID | 公開名・メールアドレスではない |
 | `chika-hyakkei-ranking-pending-v1` | 送信に失敗した終了記録（最大20件） | 接続可能な次回起動時に同じIDで再送する |
 
@@ -24,6 +25,8 @@
 魔物図鑑の `bestiary` はキーの存在を遭遇済み、値を討伐数として扱う。旧データの正の討伐数はそのまま保持される。戦闘中の苔スライム分裂済み状態はBattleEnemyの任意項目 `traitUsed` に保存し、旧Runでは `false` を補完する。
 
 21階以降で新規生成する通常敵の `kind` は、図鑑添字へ100を足した識別値を使い、25素体・4変異を曖昧なく復元する。100未満の旧 `kind` は従来式で図鑑IDへ変換する。旧戦闘セーブに `catalogId` がなければ、階層と `kind` から読込時に補完する。既存Run・Metaのバージョン番号と図鑑IDは変更しない。
+
+Runの地下依頼 `quest` は `slay`、`descend`、`chests`、テスト専用の `test` を保存する。旧Runに保存された日本語の依頼文は読込時に対応IDへ変換する。変換不能な値は `slay` へ補完する。Run v3の番号は変更せず、旧データのロールバック時も旧版は文字列として保持・読込できる。
 
 ## 変更時のルール
 

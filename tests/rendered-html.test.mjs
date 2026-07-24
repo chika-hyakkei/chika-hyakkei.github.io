@@ -104,8 +104,9 @@ test("defines the hundred-item catalog", async () => {
 
 test("opens item and monster lists from the game UI", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const i18n = await readFile(new URL("../app/i18n.ts", import.meta.url), "utf8");
   assert.match(page, /ITEM ARCHIVE/);
-  assert.match(page, /アイテムリスト/);
+  assert.match(i18n, /アイテムリスト/);
   assert.match(page, /モンスター/);
   assert.match(page, /ITEM_CATALOG\.length\}\/100/);
 });
