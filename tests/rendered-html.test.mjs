@@ -124,6 +124,27 @@ test("connects equipment master data, build comparison, combat procs, and item d
   for (const proc of ["吸血でHP", "MP循環で", "瀕死強化！", "会心！", "状態耐性", "防御反撃"]) assert.match(page, new RegExp(proc));
 });
 
+test("makes all ten consumables obtainable, saved, visible, and usable in battle", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const items = await readFile(new URL("../app/items.ts", import.meta.url), "utf8");
+  for (const id of ["c2","c4","c5","c6","c7","c8","c9","c10"]) assert.match(page, new RegExp(`\\"${id}\\"`));
+  for (const name of ["万能薬","火炎瓶","氷結札","雷鳴玉","煙玉","解呪札","止血布","星蜜"]) {
+    assert.match(items, new RegExp(name));
+  }
+  assert.match(page, /supplies,combo/);
+  assert.match(page, /rawSupplies=saved\.supplies/);
+  assert.match(page, /道具袋は\$\{SUPPLY_LIMIT\}個まで/);
+  assert.match(page, /setShowBattleItems/);
+  assert.match(page, /5 \/ I で開閉/);
+  assert.match(page, /const useSupply=/);
+  assert.match(page, /queueEnemyTurn\(\{\.\.\.next,statuses:\[\]\}/);
+  assert.match(page, /damageKind:DamageKind=id==="c4"\?"fire"/);
+  assert.match(page, /id==="c5"&&r<\.35/);
+  assert.match(page, /phase:"explore",battle:null/);
+  assert.match(page, /MPを\$\{recovered\}回復した/);
+  assert.match(page, /supplyUnavailableReason/);
+});
+
 test("shows a compact all-time podium and documented update history", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const updates = await readFile(new URL("../app/updates.ts", import.meta.url), "utf8");
