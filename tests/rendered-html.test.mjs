@@ -51,7 +51,7 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /rank=Math\.floor\(floor\/30\)/);
   assert.match(page, /baseName.*＋\$\{rank\}/);
   assert.match(page, /run\.battle\?\.boss\?"boss":"battle"/);
-  assert.match(page, /const list=gear\.filter\(g=>g\.kind===kind\)\.sort/);
+  assert.match(page, /const list=gear\.filter\(g=>g\.kind===kind&&Math\.abs\(g\.tier-tier\)<=1\)/);
   assert.match(page, /forge=Math\.floor\(run\.floor\/20\)/);
   assert.match(page, /variant-\$\{\(Number\(run\.battle\.catalogId\.slice\(1\)\)-1\)%4\}/);
   assert.match(page, /type EnemyIntent/);
@@ -97,9 +97,10 @@ test("defines the hundred-monster catalog", async () => {
 
 test("defines the hundred-item catalog", async () => {
   const items = await readFile(new URL("../app/items.ts", import.meta.url), "utf8");
-  for (const category of ["weapon", "armor", "accessory", "consumable", "relic"]) assert.match(items, new RegExp(`category:\\"${category}\\"`));
+  for (const category of ["weapon", "armor", "accessory", "consumable", "relic"]) assert.match(items, new RegExp(`category:\\s*\\"${category}\\"`));
   assert.match(items, /weaponFamilies\.flatMap/);
   assert.match(items, /armorFamilies\.flatMap/);
+  for (const passive of ["vampire", "critical", "guardCounter", "mpFlow", "statusResist", "lastStand"]) assert.match(items, new RegExp(`\\b${passive}\\b`));
 });
 
 test("opens item and monster lists from the game UI", async () => {
@@ -108,7 +109,19 @@ test("opens item and monster lists from the game UI", async () => {
   assert.match(page, /ITEM ARCHIVE/);
   assert.match(i18n, /アイテムリスト/);
   assert.match(page, /モンスター/);
-  assert.match(page, /ITEM_CATALOG\.length\}\/100/);
+  assert.match(page, /found\}\/100 入手/);
+});
+
+test("connects equipment master data, build comparison, combat procs, and item discovery", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /equipmentItems\.map/);
+  assert.match(page, /itemDiscovery:saved\.itemDiscovery\?\?\{\}/);
+  assert.match(page, /normalizeOwnedGear/);
+  assert.match(page, /inventory:\(saved\.inventory\?\?\[\]\)\.map\(normalizeOwnedGear\)/);
+  assert.match(page, /未入手・効果は未記録/);
+  assert.match(page, /const gearDelta=/);
+  assert.match(page, /現在装備と比較/);
+  for (const proc of ["吸血でHP", "MP循環で", "瀕死強化！", "会心！", "状態耐性", "防御反撃"]) assert.match(page, new RegExp(proc));
 });
 
 test("shows a compact all-time podium and documented update history", async () => {
