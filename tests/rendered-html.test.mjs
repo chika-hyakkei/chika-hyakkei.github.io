@@ -199,6 +199,24 @@ test("uses compact ten-facet jewel gauges for player HP and MP", async () => {
   assert.match(css, /\.battle-player-vitals/);
 });
 
+test("drives battle poses by command id and delays visible HP changes until impact", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const presentation = await readFile(new URL("../app/battle-presentation.ts", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
+  assert.match(page, /battlePresentation\(mode,run\?\.job\?\?"warrior"\)/);
+  assert.doesNotMatch(page, /label\.includes\("防御"\)/);
+  assert.match(page, /setShownPlayerHp/);
+  assert.match(page, /ENEMY_IMPACT_DELAY_MS/);
+  assert.match(page, /setShownEnemyHp/);
+  assert.match(page, /PLAYER_IMPACT_DELAY_MS/);
+  for (const pose of ["attack", "guard", "magic", "potion", "bomb", "flee"]) {
+    assert.match(presentation, new RegExp(`pose: "${pose}"`));
+  }
+  assert.match(css, /\.turn-player\.action-potion/);
+  assert.match(css, /\.turn-player\.action-bomb/);
+  assert.match(css, /\.turn-player\.action-flee/);
+});
+
 test("guides the first ten minutes without hiding combat state", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
