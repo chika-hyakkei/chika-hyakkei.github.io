@@ -173,3 +173,17 @@
 .battle-actions button{min-height:42px}.battle-actions button>span,.battle-actions button>small{display:block}.battle-actions button>small{margin-top:3px;color:#b9ae9c;font-size:.48rem;line-height:1.2}.battle-actions button.unavailable{opacity:.62;border-style:dashed;filter:saturate(.45)}.battle-actions button.unavailable:hover{background:#211b19}.battle-actions button.unavailable>small{color:#e7aa86}
 .guide-tip{position:fixed;z-index:90;left:18px;bottom:18px;width:min(390px,calc(100vw - 36px));padding:14px 15px;border:2px solid #c59646;background:linear-gradient(145deg,#202426f5,#0c1012f8);box-shadow:0 0 0 3px #07090a,0 12px 35px #000;color:#eee3c7}.guide-tip>span{color:#dcb05b;font-size:.54rem;letter-spacing:.18em}.guide-tip h2{margin:5px 0;color:#fff0bd;font-size:1rem}.guide-tip p{margin:0 0 11px;color:#d0ccc0;font-size:.72rem;line-height:1.65}.guide-tip>div{display:flex;gap:7px}.guide-tip button{padding:7px 11px;font-size:.65rem}.guide-tip button.primary{border-color:#d2ad61;background:#4a3517;color:#fff0bd}
 @media(max-width:600px){.guide-tip{left:6px;right:6px;top:5px;bottom:auto;width:auto;padding:6px 9px}.guide-tip>span{font-size:.43rem}.guide-tip h2{margin:2px 0;font-size:.72rem}.guide-tip p{margin-bottom:5px;font-size:.55rem;line-height:1.3}.guide-tip button{padding:4px 8px;font-size:.55rem}.status-badge{grid-template-columns:auto auto}.status-badge>small{grid-column:1/-1}.battle-actions button{min-height:39px}}
+
+/* Milestone safety: continuing is the obvious action; returning needs a second deliberate press. */
+.milestone-choice .continue-descent{width:100%;margin-top:12px;padding:14px;border-color:#d4b35d;background:linear-gradient(#486f49,#29462d);color:#fff4c9;font-weight:700;box-shadow:inset 0 0 0 1px #78946a,0 3px 0 #050705}
+.milestone-choice .return-request{width:100%;margin-top:17px;padding:9px;border-color:#615d55;background:#17191a;color:#aaa49a;font-size:.7rem}
+.return-confirm{display:grid;gap:8px;margin-top:14px;padding:13px;border:1px solid #8a4d40;background:#211413;box-shadow:inset 0 0 14px #080303;text-align:left}
+.return-confirm>b{color:#f2c8b8;font-size:.8rem}.return-confirm>small{color:#b8aaa3;font-size:.62rem;line-height:1.5}
+.return-confirm>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}.return-confirm button{min-width:0;padding:9px;font-size:.65rem}
+.return-confirm .danger-confirm{border-color:#a95e4d;background:#57261f;color:#ffe2d6}
+
+/* English labels are longer, so preserve command readability on narrow phones. */
+html[lang="en"] .battle-actions button{min-width:0;padding-inline:5px;font-size:.68rem;overflow-wrap:anywhere}
+html[lang="en"] .battle-actions button>small{font-size:.44rem}
+html[lang="en"] .jobs button small,html[lang="en"] .depth-region small{line-height:1.35}
+@media(max-width:430px){html[lang="en"] .battle-actions button{font-size:.6rem}.return-confirm>div{grid-template-columns:1fr}.milestone-choice .continue-descent{padding:12px}}

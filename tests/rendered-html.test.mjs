@@ -109,7 +109,7 @@ test("opens item and monster lists from the game UI", async () => {
   assert.match(page, /ITEM ARCHIVE/);
   assert.match(i18n, /アイテムリスト/);
   assert.match(page, /モンスター/);
-  assert.match(page, /found\}\/100 入手/);
+  assert.match(page, /found\}\/100 \{pick\(locale,"入手","found"\)\}/);
 });
 
 test("connects equipment master data, build comparison, combat procs, and item discovery", async () => {
@@ -224,11 +224,41 @@ test("guides the first ten minutes without hiding combat state", async () => {
   assert.match(page, /FIRST DESCENT/);
   assert.match(page, /案内をもう一度/);
   assert.match(page, /function StatusBadges/);
-  assert.match(page, /残り\$\{status\.turns\}ターン/);
-  assert.match(page, /MP \{cost\}\{unavailable\?"・不足"/);
+  assert.match(page, /statusCopy\(locale,status\.kind\)/);
+  assert.match(page, /status\.turns\}T/);
+  assert.match(page, /MP \{cost\}\{unavailable\?pick\(locale,"・不足"," · Low"\):""\}/);
   assert.match(page, /階層主から逃走不可/);
   assert.match(css, /\.guide-tip\{position:fixed/);
   assert.match(css, /\.battle-actions button\.unavailable/);
+});
+
+test("ships the complete English route and stable-id content localization", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const route = await readFile(new URL("../app/en/page.tsx", import.meta.url), "utf8");
+  const content = await readFile(new URL("../app/content-localization.ts", import.meta.url), "utf8");
+  const exporter = await readFile(new URL("../scripts/build-github-pages.mjs", import.meta.url), "utf8");
+  assert.match(route, /export \{ default \} from "\.\.\/page"/);
+  assert.match(page, /englishPath=\/\\\/en\\\/\?\$\//);
+  for (const helper of ["localizedItem","localizedMonster","localizedBossTactic","localizedBattleName","localizedDepth"]) {
+    assert.match(page, new RegExp(`${helper}\\(`));
+    assert.match(content, new RegExp(`function ${helper}\\(`));
+  }
+  assert.match(content, /const monsterBases = \[/);
+  assert.match(content, /const depthNames = \[/);
+  assert.match(exporter, /resolve\(outputDir, "en", "index\.html"\)/);
+});
+
+test("makes continuing after a boss primary and protects return with confirmation", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
+  const continueAt = page.indexOf('className="primary continue-descent"');
+  const returnAt = page.indexOf('className="return-request"');
+  assert.ok(continueAt >= 0 && returnAt > continueAt);
+  assert.match(page, /setConfirmReturn\(true\)/);
+  assert.match(page, /className="danger-confirm" onClick=\{\(\)=>finish\("return"\)\}/);
+  assert.match(page, /setConfirmReturn\(false\)/);
+  assert.match(css, /\.milestone-choice \.continue-descent/);
+  assert.match(css, /\.return-confirm/);
 });
 
 test("connects monster tactics to combat and progressive bestiary knowledge", async () => {

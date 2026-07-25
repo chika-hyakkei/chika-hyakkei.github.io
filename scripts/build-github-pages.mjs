@@ -19,5 +19,7 @@ const html = await response.text();
 if (!html.includes("地下百景")) throw new Error("Static export did not contain the game page");
 
 await writeFile(resolve(outputDir, "index.html"), html);
+await mkdir(resolve(outputDir, "en"), { recursive: true });
+await writeFile(resolve(outputDir, "en", "index.html"), html);
 await writeFile(resolve(outputDir, ".nojekyll"), "");
 console.log("GitHub Pages files written to site/");

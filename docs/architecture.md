@@ -27,6 +27,8 @@
 | `app/music.ts` | Web Audioによる場面別主旋律と階層帯別変奏 |
 | `app/onboarding.ts` | 初回案内の進捗補完と、現在状況から次に出す案内の判定 |
 | `app/i18n.ts` | 日本語・英語の翻訳辞書、端末言語判定、日本語フォールバック、言語非依存の地下依頼ID |
+| `app/content-localization.ts` | 安定IDから100アイテム、100魔物、10階層主、10地域の英語表示を導出 |
+| `app/en/page.tsx` | 英語で直接開くための `/en/` 入口 |
 | `app/telemetry.ts` | 端末内だけの匿名テスト記録 |
 | `app/ranking.ts` | ランキングの取得、自動送信、送信待ちキューと再送 |
 | `app/layout.tsx` | ランキング設定とCloudflare Web Analytics beaconの読込 |
@@ -45,6 +47,8 @@
 Web AnalyticsはGitHub PagesにCloudflareの計測beaconを直接読み込ませる。ゲームの行動・セーブ・名前は送らず、ページ訪問の匿名集計だけをCloudflareダッシュボードで確認する。
 
 表示言語は端末内設定として保存する。画面は翻訳キーから文言を取得し、英語辞書に未登録のキーは日本語へ戻す。言語切替はRun・Meta・ランキング値を変更しない。
+
+英語版もRunやMetaに翻訳文を保存しない。既存の日本語名やメッセージを含む旧セーブを読み込んでも、画面表示時に安定ID・現在フェーズ・階番号から英語表示を導出する。静的公開時は `/index.html` と `/en/index.html` の双方を書き出す。
 
 ## 境界
 
