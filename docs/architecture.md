@@ -28,6 +28,8 @@
 | `app/telemetry.ts` | 端末内だけの匿名テスト記録 |
 | `app/ranking.ts` | ランキングの取得、自動送信、送信待ちキューと再送 |
 | `app/layout.tsx` | ランキング設定とCloudflare Web Analytics beaconの読込 |
+| `scripts/balance-simulator.mjs` | 全職業・3ビルド・2戦術の固定シード難易度モデル |
+| `scripts/balance-report.mjs` | 到達率、残資源、死因、所要時間の計測レポート |
 | `public/ranking-config.js` | ゲームから使うランキングAPI URL |
 | `ranking-api/` | Cloudflare Worker・D1の終了記録ランキングと移行SQL |
 | `.github/workflows/deploy-pages.yml` | GitHub Pages公開 |
