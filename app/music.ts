@@ -1,3 +1,5 @@
+import { depthThemeForBand } from "./depth-themes";
+
 export type GameTheme = "dungeon" | "battle" | "boss" | "shop" | "death";
 
 type Track = { melody: number[]; bass: number[]; chords: number[][]; counter?: number[]; stepMs: number; lead: OscillatorType; heavy?: boolean };
@@ -11,10 +13,10 @@ const tracks: Record<GameTheme, Track> = {
   death: { melody: [165,147,131,110,98,82,73,0], bass: [55,0,49,0,41,0,37,0], chords: [[165,196,247],[147,175,220],[131,165,196],[110,131,165]], stepMs: 260, lead: "triangle" },
 };
 
-function createBus(context: AudioContext, level: number) {
+function createBus(context: AudioContext, level: number, echo = .16) {
   const master = context.createGain(), compressor = context.createDynamicsCompressor(), delay = context.createDelay(.4), feedback = context.createGain(), wet = context.createGain();
   master.gain.value = level; compressor.threshold.value = -22; compressor.knee.value = 14; compressor.ratio.value = 5; compressor.attack.value = .01; compressor.release.value = .18;
-  delay.delayTime.value = .165; feedback.gain.value = .17; wet.gain.value = .16;
+  delay.delayTime.value = .165; feedback.gain.value = .14 + echo * .18; wet.gain.value = echo;
   master.connect(compressor); master.connect(delay); delay.connect(feedback); feedback.connect(delay); delay.connect(wet); wet.connect(compressor); compressor.connect(context.destination);
   return { master, stop: () => { master.disconnect(); delay.disconnect(); feedback.disconnect(); wet.disconnect(); compressor.disconnect(); } };
 }
@@ -31,19 +33,28 @@ function lowPulse(context: AudioContext, destination: AudioNode, when: number, l
   gain.gain.setValueAtTime(level, when); gain.gain.exponentialRampToValueAtTime(.0001, when + .15); oscillator.connect(gain); gain.connect(destination); oscillator.start(when); oscillator.stop(when + .16);
 }
 
-export function startGameTheme(context: AudioContext, theme: GameTheme) {
-  const track = tracks[theme], bus = createBus(context, theme === "boss" ? .19 : .15); let step = 0, timer = 0, stopped = false;
-  const tick = () => { if (stopped) return; const when = context.currentTime + .03, i = step % track.melody.length, beat = i % 4, note = track.melody[i], bass = track.bass[i], counter = track.counter?.[i % track.counter.length]??0, chord = track.chords[Math.floor(i / 2) % track.chords.length], lap = Math.floor(step / track.melody.length) % 4;
-    // 先に従来のメロディ、次に重心となる低音、最後に控えめな和音を置く。
-    playTone(context,bus.master,note,track.stepMs/1000*.78,.061,track.lead,when);
-    if(note) playTone(context,bus.master,note,track.stepMs/1000*.72,.015,"square",when,7);
-    playTone(context,bus.master,bass,track.stepMs/1000*.92,theme === "shop" ? .028 : .045,"triangle",when);
-    if(counter) playTone(context,bus.master,counter,track.stepMs/1000*1.3,.026,"triangle",when+.03);
-    if(beat===0) chord.forEach((frequency,index)=>playTone(context,bus.master,frequency,track.stepMs/1000*3.45,.011-index*.0015,"sine",when+.012));
-    if(lap>=1&&note) playTone(context,bus.master,note/2,track.stepMs/1000*.64,.019,"sine",when+.042);
-    if(lap>=2&&note) playTone(context,bus.master,note*2,track.stepMs/1000*.34,.014,"triangle",when+.02);
-    if(theme === "shop" && beat===2) playTone(context,bus.master,note*1.5,.075,.022,"sine",when+.06);
-    if(track.heavy && (beat===0 || lap>=2&&beat===2)) lowPulse(context,bus.master,when,lap>=2 ? .065 : .045);
+const shifted = (frequency: number, semitones: number) => frequency ? frequency * Math.pow(2, semitones / 12) : 0;
+
+export function startGameTheme(context: AudioContext, theme: GameTheme, depthBand = 1) {
+  const track = tracks[theme], depth = depthThemeForBand(depthBand), profile = depth.music;
+  const transpose = theme === "shop" ? Math.round(profile.transpose / 2) : profile.transpose;
+  const density = theme === "shop" ? Math.min(2, profile.density) : profile.density;
+  const balance = [1, .96, .9, .84][density - 1];
+  const masterLevel = theme === "boss" ? .18 : theme === "battle" ? .155 : theme === "shop" ? .145 : .15;
+  const bus = createBus(context, masterLevel, .12 + density * .018);
+  let step = 0, timer = 0, stopped = false;
+  const tick = () => { if (stopped) return; const when = context.currentTime + .03, i = step % track.melody.length, beat = i % 4, rawNote = track.melody[i], note = shifted(rawNote,transpose), bass = shifted(track.bass[i],transpose), trackCounter = track.counter?.[i % track.counter.length]??0, depthInterval = profile.counter[i % profile.counter.length], counter = trackCounter ? shifted(trackCounter,transpose) : rawNote&&depthInterval!==null ? shifted(rawNote,transpose+depthInterval) : 0, chord = track.chords[Math.floor(i / 2) % track.chords.length].map(frequency=>shifted(frequency,transpose)), lap = Math.floor(step / track.melody.length) % 4;
+    // 主旋律は保ち、階層帯ごとの音域・音色・対旋律だけを変える。層が増えるほど各音を抑え、総音量を揃える。
+    playTone(context,bus.master,note,track.stepMs/1000*.78,.061*balance,theme==="dungeon"?profile.voice:track.lead,when);
+    if(density>=2&&note) playTone(context,bus.master,note,track.stepMs/1000*.72,.014*balance,"square",when,depthBand%2?7:-7);
+    playTone(context,bus.master,bass,track.stepMs/1000*.92,(theme === "shop" ? .028 : .043)*balance,"triangle",when);
+    if(density>=2&&counter) playTone(context,bus.master,counter,track.stepMs/1000*(density>=4?1.55:1.2),.017*balance,density>=3?"triangle":"sine",when+.03);
+    if(beat===0) chord.forEach((frequency,index)=>playTone(context,bus.master,frequency,track.stepMs/1000*3.45,(.011-index*.0015)*balance,"sine",when+.012));
+    if(density>=3&&lap>=1&&note) playTone(context,bus.master,note/2,track.stepMs/1000*.64,.016*balance,"sine",when+.042);
+    if(density>=4&&lap>=2&&note) playTone(context,bus.master,note*2,track.stepMs/1000*.34,.011*balance,"triangle",when+.02);
+    if(theme === "shop" && beat===2) playTone(context,bus.master,note*1.5,.075,.021*balance,"sine",when+.06);
+    if(profile.pulse&&beat===0&&(theme==="dungeon"||theme==="battle"||theme==="boss")) lowPulse(context,bus.master,when,profile.pulse*balance);
+    if(track.heavy && (beat===0 || lap>=2&&beat===2)) lowPulse(context,bus.master,when,(lap>=2 ? .058 : .041)*balance);
     step++; timer=window.setTimeout(tick,track.stepMs);
   };
   tick(); return () => { stopped=true; window.clearTimeout(timer); bus.stop(); };
