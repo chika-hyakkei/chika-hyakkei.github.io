@@ -19,7 +19,7 @@ test("uses guard, healing, and magic poses for the matching job skills", () => {
   assert.deepEqual(battlePresentation("skill1", "priest"), { pose: "potion", fx: "heal" });
   assert.deepEqual(battlePresentation("skill2", "priest"), { pose: "guard", fx: "" });
   assert.deepEqual(battlePresentation("skill1", "mage"), { pose: "magic", fx: "magic" });
-  assert.deepEqual(battlePresentation("skill1", "sage"), { pose: "potion", fx: "heal" });
+  assert.deepEqual(battlePresentation("skill1", "sage"), { pose: "magic", fx: "heal" });
   assert.deepEqual(battlePresentation("skill2", "sage"), { pose: "magic", fx: "magic" });
   assert.deepEqual(battlePresentation("skill1", "knight"), { pose: "guard", fx: "" });
 });
