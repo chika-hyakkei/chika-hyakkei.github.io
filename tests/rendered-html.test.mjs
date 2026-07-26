@@ -67,6 +67,17 @@ test("ships the complete roguelike loop", async () => {
   assert.match(page, /recordRunEnd/);
 });
 
+test("renders a detailed treasure chest and keeps battle backgrounds free of a center seam", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
+  assert.match(page, /className="chest-mark" aria-hidden="true"><i\/><i\/><i\/>/);
+  assert.match(css, /\.chest-mark:before/);
+  assert.match(css, /\.chest-mark:after/);
+  assert.match(css, /\.chest-mark i:nth-child\(1\)/);
+  assert.doesNotMatch(css, /\.battle\.modal:before\{[^}]*transparent 49%/);
+  assert.doesNotMatch(css, /\.shell:not\(\.depth-0\) \.battle\.modal:before\{[^}]*transparent 49%/);
+});
+
 test("stores only anonymous local playtest records", async () => {
   const telemetry = await readFile(new URL("../app/telemetry.ts", import.meta.url), "utf8");
   assert.match(telemetry, /chika-hyakkei-test-record-v1/);
