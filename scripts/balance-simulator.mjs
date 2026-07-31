@@ -1,4 +1,4 @@
-export const JOBS = ["warrior", "thief", "priest", "mage", "knight", "sage"];
+export const JOBS = ["warrior", "thief", "priest", "mage", "knight", "sage", "samurai", "alchemist"];
 export const BUILDS = ["offense", "guard", "sustain"];
 export const STRATEGIES = ["novice", "forecast"];
 export const CHECKPOINTS = [10, 30, 50, 70, 90, 100];
@@ -10,6 +10,8 @@ const JOB_MODEL = {
   mage: { hp: 88, mp: 24, risk: .0008, mpUse: 1.12 },
   knight: { hp: 118, mp: 14, risk: -.0008, mpUse: .70 },
   sage: { hp: 100, mp: 27, risk: .0008, mpUse: .96 },
+  samurai: { hp: 108, mp: 15, risk: .0004, mpUse: .85 },
+  alchemist: { hp: 98, mp: 30, risk: -.0005, mpUse: .90 },
 };
 
 const BUILD_MODEL = {

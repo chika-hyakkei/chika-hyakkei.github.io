@@ -16,6 +16,12 @@ export function battlePresentation(command: BattleCommand, job: string): {
   if (job === "sage") return command === "skill1"
     ? { pose: "magic", fx: "heal" }
     : { pose: "magic", fx: "magic" };
+  if (job === "samurai") return command === "skill1"
+    ? { pose: "attack", fx: "slash" }
+    : { pose: "guard", fx: "" };
+  if (job === "alchemist") return command === "skill1"
+    ? { pose: "bomb", fx: "blast" }
+    : { pose: "potion", fx: "heal" };
   if (job === "priest") return command === "skill1"
     ? { pose: "potion", fx: "heal" }
     : { pose: "guard", fx: "" };

@@ -25,11 +25,13 @@ test("server-renders the Chika Hyakkei title screen", async () => {
 test("ships the complete roguelike loop", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const music = await readFile(new URL("../app/music.ts", import.meta.url), "utf8");
-  for (const text of ["戦士","盗賊","僧侶","魔法使い","騎士","賢者","強打","盗む","治療","火球","盾打ち","雷撃"]) assert.match(page, new RegExp(text));
+  for (const text of ["戦士","盗賊","僧侶","魔法使い","騎士","賢者","侍","錬金術師","強打","盗む","治療","火球","盾打ち","雷撃","居合斬り","爆薬調合"]) assert.match(page, new RegExp(text));
   assert.match(page, /const W = 13, H = 11/);
   assert.match(page, /function generateFloor/);
-  assert.match(page, /10&&!unlocked\.includes\("knight"\)/);
-  assert.match(page, /20&&!unlocked\.includes\("sage"\)/);
+  assert.match(page, /!current\.testMode\).*current\.floor>=10/);
+  assert.match(page, /current\.floor>=20&&!unlocked\.includes\("sage"\)/);
+  assert.match(page, /current\.floor>=50&&!unlocked\.includes\("samurai"\)/);
+  assert.match(page, /current\.floor>=80&&!unlocked\.includes\("alchemist"\)/);
   assert.match(page, /chika-hyakkei-run-v3/);
   assert.match(page, /catalogId:saved\.battle\.catalogId\?\?monsterForBattle/);
   assert.match(page, /localStorage\.removeItem\(RUN_KEY\)/);

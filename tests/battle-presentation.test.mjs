@@ -22,6 +22,10 @@ test("uses guard, healing, and magic poses for the matching job skills", () => {
   assert.deepEqual(battlePresentation("skill1", "sage"), { pose: "magic", fx: "heal" });
   assert.deepEqual(battlePresentation("skill2", "sage"), { pose: "magic", fx: "magic" });
   assert.deepEqual(battlePresentation("skill1", "knight"), { pose: "guard", fx: "" });
+  assert.deepEqual(battlePresentation("skill1", "samurai"), { pose: "attack", fx: "slash" });
+  assert.deepEqual(battlePresentation("skill2", "samurai"), { pose: "guard", fx: "" });
+  assert.deepEqual(battlePresentation("skill1", "alchemist"), { pose: "bomb", fx: "blast" });
+  assert.deepEqual(battlePresentation("skill2", "alchemist"), { pose: "potion", fx: "heal" });
 });
 
 test("keeps player and enemy impact delays inside their animation windows", () => {
