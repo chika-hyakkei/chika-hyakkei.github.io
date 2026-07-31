@@ -199,6 +199,22 @@ test("preserves the core end, chest, shop, save recovery, and ranking retry path
   assert.match(migration, /CREATE UNIQUE INDEX ranking_runs_submission_id/);
 });
 
+test("makes normal run endings actionable and keeps retry progress derived from the run", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(page, /type DeathCause = "heavy" \| "status" \| "reflect" \| "enemy"/);
+  assert.match(page, /const questProgressFor=/);
+  assert.match(page, /function RunResultCard/);
+  assert.match(page, /回収候補：/);
+  assert.match(page, /次の称号/);
+  assert.match(page, /className=\{`quest-ribbon/);
+  assert.match(page, /result&&!result\.testMode&&<RunResultCard/);
+  assert.match(page, /compact onRetry=\{start\}/);
+  assert.match(css, /\.start-panel>\.result\{display:none\}/);
+  assert.match(css, /\.run-result/);
+  assert.match(css, /\.quest-ribbon/);
+});
+
 test("uses compact ten-facet jewel gauges for player HP and MP", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
