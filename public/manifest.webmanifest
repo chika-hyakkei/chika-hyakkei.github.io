@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "地下百景｜無限ダンジョンRPG",
+  "short_name": "地下百景",
+  "description": "敵の次行動を読み、地下100階を踏破する無料レトロRPG。",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080b0d",
+  "theme_color": "#10181c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

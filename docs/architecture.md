@@ -8,6 +8,7 @@
 ブラウザ
   ├─ GitHub Pages: React/Vinext のゲーム本体
   │   ├─ localStorage: 冒険・直前バックアップ・メタ進行・匿名テスト記録
+  │   ├─ Service Worker: ゲームシェルと静的アセットのオフラインキャッシュ
   │   ├─ localStorage送信待ちキュー → ランキング API
   │   └─ 匿名集計: Cloudflare Web Analytics beacon
   └─ Cloudflare Worker: ランキング API
@@ -32,6 +33,8 @@
 | `app/telemetry.ts` | 端末内だけの匿名テスト記録 |
 | `app/ranking.ts` | ランキングの取得、自動送信、送信待ちキューと再送 |
 | `app/layout.tsx` | ランキング設定とCloudflare Web Analytics beaconの読込 |
+| `public/manifest.webmanifest` | ホーム画面追加用のPWAメタデータ |
+| `public/sw.js` | 同一オリジンのゲームシェル・静的アセットのキャッシュと通信復旧 |
 | `scripts/balance-simulator.mjs` | 全職業・3ビルド・2戦術の固定シード難易度モデル |
 | `scripts/balance-report.mjs` | 到達率、残資源、死因、所要時間の計測レポート |
 | `public/ranking-config.js` | ゲームから使うランキングAPI URL |
@@ -45,6 +48,8 @@
 ランキングAPIはゲーム本体と別にCloudflare Workersへ公開する。WorkerのURLは `public/ranking-config.js` にだけ保持し、UIコードへ直書きしない。
 
 Web AnalyticsはGitHub PagesにCloudflareの計測beaconを直接読み込ませる。ゲームの行動・セーブ・名前は送らず、ページ訪問の匿名集計だけをCloudflareダッシュボードで確認する。
+
+PWAのService Workerは同一オリジンの `/` と `/en/`、静的アセットをキャッシュする。HTMLのナビゲーションはネットワーク優先で更新し、通信できない場合だけキャッシュへ戻す。ランキング設定とランキングAPIはキャッシュ対象から外し、既存の送信待ちキュー・再送処理を妨げない。キャッシュにはlocalStorageの冒険・Meta・名前を保存しない。
 
 表示言語は端末内設定として保存する。画面は翻訳キーから文言を取得し、英語辞書に未登録のキーは日本語へ戻す。言語切替はRun・Meta・ランキング値を変更しない。
 

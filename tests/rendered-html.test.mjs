@@ -288,6 +288,24 @@ test("ships the complete English route and stable-id content localization", asyn
   assert.match(exporter, /resolve\(outputDir, "en", "index\.html"\)/);
 });
 
+test("provides an installable offline shell without intercepting ranking traffic", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"));
+  const serviceWorker = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.equal(manifest.start_url, "/");
+  assert.equal(manifest.scope, "/");
+  assert.equal(manifest.display, "standalone");
+  assert.ok(manifest.icons.some((icon) => icon.src === "/favicon.svg"));
+  assert.match(layout, /manifest\.webmanifest/);
+  assert.match(layout, /apple-mobile-web-app-capable/);
+  assert.match(page, /serviceWorker\.register\("\/sw\.js"/);
+  assert.match(serviceWorker, /cache\.addAll\(CORE_URLS\)/);
+  assert.match(serviceWorker, /request\.mode === "navigate"/);
+  assert.match(serviceWorker, /url\.pathname === "\/ranking-config\.js"/);
+  assert.match(serviceWorker, /self\.clients\.claim\(\)/);
+});
+
 test("makes continuing after a boss primary and protects return with confirmation", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
