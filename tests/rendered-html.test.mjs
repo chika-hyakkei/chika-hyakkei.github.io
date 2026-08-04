@@ -203,7 +203,7 @@ test("preserves the core end, chest, shop, save recovery, and ranking retry path
   for (const reason of ["dead", "return", "abandon", "clear"]) assert.match(page, new RegExp(`reason===\\"${reason}\\"|finish\\(\\"${reason}\\"`));
   assert.match(page, /finalizeRunViewState\(reason,current,total,newly\)/);
   assert.match(page, /inventory\.length>=8.*gold:g\.gold\+12/s);
-  assert.match(page, /old&&run\.inventory\.length>=8.*先に捨てるか売ろう.*return/s);
+  assert.match(page, /old&&!old\.loaned&&run\.inventory\.length>=8.*先に捨てるか売ろう.*return/s);
   assert.match(page, /loadRecoverable\(localStorage,RUN_KEY,RUN_BACKUP_KEY,RUN_QUARANTINE_KEY,normalizeRun\)/);
   assert.match(page, /submitRankingReliably\(\{submissionId:crypto\.randomUUID\(\)/);
   assert.match(ranking, /queueRanking\(submission\).*submitRanking\(submission\).*removeQueuedRanking/s);
@@ -226,6 +226,23 @@ test("makes normal run endings actionable and keeps retry progress derived from 
   assert.match(css, /\.start-panel>\.result\{display:none\}/);
   assert.match(css, /\.run-result/);
   assert.match(css, /\.quest-ribbon/);
+});
+
+test("adds a checkpoint-limited abyss descent without submitting its route to ranking", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/grim.css", import.meta.url), "utf8");
+  const descent = await readFile(new URL("../app/descent.ts", import.meta.url), "utf8");
+  assert.match(page, /deepestSafeFloor/);
+  assert.match(page, /const beginDescent=/);
+  assert.match(page, /const landDescent=/);
+  assert.match(page, /route:"descent"/);
+  assert.match(page, /finished\.route!=="normal"/);
+  assert.match(page, /className="descent-entry"/);
+  assert.match(page, /className="descent-shaft"/);
+  assert.match(css, /\.descent-shaft/);
+  assert.match(css, /\.descent-hero/);
+  assert.match(descent, /DESCENT_MAX_PROGRESS = 120/);
+  assert.match(descent, /descentTargetFloor/);
 });
 
 test("uses compact ten-facet jewel gauges for player HP and MP", async () => {

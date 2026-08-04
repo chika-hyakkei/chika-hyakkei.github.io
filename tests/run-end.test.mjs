@@ -22,3 +22,9 @@ test("keeps test-mode endings out of the online ranking", () => {
   assert.equal(transition.result.reason, "clear");
   assert.equal(transition.shouldSubmitRanking, false);
 });
+
+test("keeps abyss-descent endings out of the standard online ranking", () => {
+  const transition = finalizeRunViewState("dead", { name: "降下者", job: "warrior", floor: 41, kills: 3, bosses: 0, testMode: false, route: "descent" }, 4100, []);
+  assert.equal(transition.result.route, "descent");
+  assert.equal(transition.shouldSubmitRanking, false);
+});
