@@ -30,5 +30,9 @@ export function battlePresentation(command: BattleCommand, job: string): {
   return { pose: "attack", fx: "slash" };
 }
 
+export function canIssueBattleCommand(run: { phase: string; battle: unknown; pendingEnemyTurn: unknown } | null, turnStep: string, locked: boolean, overlayOpen: boolean) {
+  return Boolean(run?.phase === "battle" && run.battle && !run.pendingEnemyTurn && turnStep === "idle" && !locked && !overlayOpen);
+}
+
 export const PLAYER_IMPACT_DELAY_MS = 250;
 export const ENEMY_IMPACT_DELAY_MS = 220;

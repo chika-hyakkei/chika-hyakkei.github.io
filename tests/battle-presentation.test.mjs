@@ -32,3 +32,12 @@ test("keeps player and enemy impact delays inside their animation windows", () =
   assert.ok(PLAYER_IMPACT_DELAY_MS >= 220 && PLAYER_IMPACT_DELAY_MS <= 380);
   assert.ok(ENEMY_IMPACT_DELAY_MS >= 180 && ENEMY_IMPACT_DELAY_MS <= 300);
 });
+test("input is blocked for either animation beat, pending logic and foreground overlays",async()=>{
+  const {canIssueBattleCommand}=await import("../app/battle-presentation.ts");
+  const run={phase:"battle",battle:{},pendingEnemyTurn:null};
+  assert.equal(canIssueBattleCommand(run,"idle",false,false),true);
+  for(const phase of ["player","enemy"])assert.equal(canIssueBattleCommand(run,phase,false,false),false);
+  assert.equal(canIssueBattleCommand(run,"idle",true,false),false);
+  assert.equal(canIssueBattleCommand(run,"idle",false,true),false);
+  assert.equal(canIssueBattleCommand({...run,pendingEnemyTurn:{}},"idle",false,false),false);
+});

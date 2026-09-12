@@ -14,6 +14,12 @@ export type RankingEntry = {
 
 export type RankingSubmission = Omit<RankingEntry, "id" | "rank" | "playedAt" | "highlighted"> & { playerId: string; submissionId: string };
 
+export const FAILED_RANKING_KEY = "chika-hyakkei-ranking-failed-v1";
+export class RankingError extends Error {
+  status: number;
+  constructor(message: string, status: number) { super(message); this.status = status; }
+  get permanent() { return this.status === 400 || this.status === 422; }
+}
 export const PENDING_RANKING_KEY = "chika-hyakkei-ranking-pending-v1";
 
 declare global {
@@ -37,7 +43,7 @@ const pendingRankings = () => {
   } catch { return []; }
 };
 
-const writePendingRankings = (entries: RankingSubmission[]) => localStorage.setItem(PENDING_RANKING_KEY, JSON.stringify(entries.slice(-20)));
+const writePendingRankings = (entries: RankingSubmission[]) => localStorage.setItem(PENDING_RANKING_KEY, JSON.stringify(entries));
 export const queueRanking = (submission: RankingSubmission) => {
   const entries = pendingRankings();
   if (!entries.some(entry=>entry.submissionId===submission.submissionId)) writePendingRankings([...entries,submission]);
@@ -51,8 +57,9 @@ export async function loadRanking(highlightId?: string | null) {
   if (highlightId) query.set("highlight", highlightId);
   const response = await fetch(`${base}/leaderboard?${query}`, { headers: { accept: "application/json" } });
   if (!response.ok) throw new Error("ランキングを読み込めませんでした。");
-  const body = await response.json() as { entries?: RankingEntry[] };
-  return body.entries ?? [];
+  const body = await response.json() as { entries?: RankingEntry[]; currentEntry?: RankingEntry | null };
+  const entries = body.entries ?? [];
+  return body.currentEntry && !entries.some(entry=>String(entry.id)===String(body.currentEntry!.id)) ? [...entries, body.currentEntry] : entries;
 }
 
 export async function submitRanking(submission: RankingSubmission) {
@@ -61,23 +68,39 @@ export async function submitRanking(submission: RankingSubmission) {
   const response = await fetch(`${base}/submit`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(submission) });
   if (!response.ok) {
     const body = await response.json().catch(() => null) as { error?: string } | null;
-    throw new Error(body?.error ?? "記録を送信できませんでした。");
+    throw new RankingError(body?.error ?? "記録を送信できませんでした。", response.status);
   }
   return response.json() as Promise<{ entryId: string }>;
 }
 
 export async function submitRankingReliably(submission: RankingSubmission) {
   queueRanking(submission);
-  const recorded = await submitRanking(submission);
+  try {
+    const recorded = await submitRanking(submission);
+    removeQueuedRanking(submission.submissionId);
+    return recorded;
+  } catch (error) {
+    if (error instanceof RankingError && error.permanent) archiveRejected(submission, error);
+    throw error;
+  }
+}
+
+function archiveRejected(submission: RankingSubmission, error: RankingError) {
+  const raw = localStorage.getItem(FAILED_RANKING_KEY);
+  let saved: unknown[] = [];
+  try { const parsed = JSON.parse(raw ?? "[]"); if (Array.isArray(parsed)) saved = parsed; } catch { if (raw) saved = [{ raw }]; }
+  localStorage.setItem(FAILED_RANKING_KEY, JSON.stringify([...saved, { submission, error: error.message, status: error.status }]));
   removeQueuedRanking(submission.submissionId);
-  return recorded;
 }
 
 export async function flushPendingRankings() {
-  let sent = 0;
+  let sent = 0, rejected = 0;
   for (const submission of pendingRankings()) {
     try { await submitRanking(submission); removeQueuedRanking(submission.submissionId); sent++; }
-    catch { break; }
+    catch (error) {
+      if (error instanceof RankingError && error.permanent) { archiveRejected(submission, error); rejected++; continue; }
+      break;
+    }
   }
-  return { sent, remaining: pendingRankings().length };
+  return { sent, remaining: pendingRankings().length, rejected };
 }

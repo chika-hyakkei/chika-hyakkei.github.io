@@ -1,0 +1,25 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {execFileSync} from "node:child_process";
+import {readFileSync,existsSync} from "node:fs";
+import {fileURLToPath} from "node:url";
+import vm from "node:vm";
+test("the first completed installation has the HTML, JS and CSS needed while offline",async()=>{
+ const root=fileURLToPath(new URL("../",import.meta.url));
+ execFileSync(process.execPath,["scripts/build-github-pages.mjs"],{cwd:root,stdio:"pipe"});
+ const sw=readFileSync(new URL("../site/sw.js",import.meta.url),"utf8"),urls=JSON.parse(sw.match(/const CORE_URLS = (.*);/)[1]);
+ assert.ok(urls.some(url=>/\/assets\/page-.*\.js/.test(url)));assert.ok(urls.some(url=>url.endsWith(".css")));
+ for(const url of urls)assert.ok(existsSync(root+"site"+(url==="/" ? "/index.html":url==="/en/"?"/en/index.html":url)),url);
+ const cache=new Map(),handlers={},pending=[];
+ const caches={open:async()=>({addAll:async urls=>{for(const url of urls)cache.set(url,new Response(url));},put:async(request,response)=>cache.set(new URL(request.url).pathname,response)}),keys:async()=>[],delete:async()=>true,match:async request=>cache.get(typeof request==="string"?request:new URL(request.url).pathname)?.clone()};
+ const self={location:{origin:"https://game.test"},addEventListener:(name,handler)=>handlers[name]=handler,skipWaiting:async()=>{},clients:{claim:async()=>{}}};
+ vm.runInNewContext(sw,{self,caches,fetch:async()=>{throw new Error("offline");},URL,Response});
+ handlers.install({waitUntil:promise=>pending.push(promise)});await Promise.all(pending);
+ const js=urls.find(url=>/\/assets\/page-.*\.js/.test(url));
+ let response;
+ handlers.fetch({request:{method:"GET",url:"https://game.test"+js},respondWith:promise=>response=promise});
+ assert.equal((await response).status,200);assert.equal(await(await response).text(),js);
+ handlers.fetch({request:{method:"GET",url:"https://game.test/",mode:"navigate"},respondWith:promise=>response=promise});
+ assert.equal((await response).status,200);
+ let intercepted=false;handlers.fetch({request:{method:"GET",url:"https://game.test/ranking-config.js"},respondWith:()=>intercepted=true});assert.equal(intercepted,false);
+});

@@ -1,13 +1,15 @@
+import { JOB_IDS } from "../../shared/jobs.ts";
+
 export interface Env { DB: D1Database; ALLOWED_ORIGIN?: string }
 
 type Result = "dead" | "return" | "abandon" | "clear";
 type Submission = { submissionId?: string; playerId: string; name: string; job: string; floor: number; score: number; kills: number; bosses: number; result: Result };
 
-const jobs = new Set(["warrior", "thief", "priest", "mage", "knight", "sage"]);
+const jobs = new Set<string>(JOB_IDS);
 const text = (body: unknown, status = 200, extra: HeadersInit = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...extra } });
 const weekKey = (date: Date) => { const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())); const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day); const year = d.getUTCFullYear(); const first = new Date(Date.UTC(year, 0, 1)); return `${year}-${String(Math.ceil((((d.getTime() - first.getTime()) / 86400000) + 1) / 7)).padStart(2, "0")}`; };
 const cors = (request: Request, env: Env) => ({ "access-control-allow-origin": request.headers.get("origin") === (env.ALLOWED_ORIGIN ?? "https://chika-hyakkei.github.io") ? request.headers.get("origin")! : (env.ALLOWED_ORIGIN ?? "https://chika-hyakkei.github.io"), "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type", vary: "Origin" });
-const valid = (value: unknown): value is Submission => {
+export const valid = (value: unknown): value is Submission => {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (v.submissionId === undefined || typeof v.submissionId === "string" && /^[a-f0-9-]{20,64}$/i.test(v.submissionId))
@@ -29,9 +31,15 @@ export default {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/leaderboard") {
       const highlight = url.searchParams.get("highlight") ?? "";
-      const query = "SELECT id, display_name name, job, floor, score, kills, bosses, result, played_at playedAt FROM ranking_runs ORDER BY score DESC, floor DESC, played_at ASC LIMIT 100";
+      const query = "SELECT id, display_name name, job, floor, score, kills, bosses, result, played_at playedAt FROM ranking_runs ORDER BY score DESC, floor DESC, played_at ASC, id ASC LIMIT 100";
       const { results = [] } = await env.DB.prepare(query).all<Record<string, unknown>>();
-      return text({ entries: results.map((entry, index) => ({ rank: index + 1, ...entry, highlighted: String(entry.id) === highlight })) }, 200, headers);
+      const entries = results.map((entry, index) => ({ rank: index + 1, ...entry, id: String(entry.id), highlighted: String(entry.id) === highlight }));
+      let currentEntry = null;
+      if (/^\d{1,16}$/.test(highlight) && !entries.some(entry => entry.id === highlight)) {
+        const found = await env.DB.prepare("SELECT * FROM (SELECT id, display_name name, job, floor, score, kills, bosses, result, played_at playedAt, ROW_NUMBER() OVER (ORDER BY score DESC, floor DESC, played_at ASC, id ASC) rank FROM ranking_runs) WHERE id = ?").bind(Number(highlight)).first<Record<string, unknown>>();
+        if (found) currentEntry = { ...found, id: String(found.id), highlighted: true };
+      }
+      return text({ entries, currentEntry }, 200, headers);
     }
     if (request.method === "POST" && url.pathname === "/submit") {
       if (request.headers.get("origin") !== (env.ALLOWED_ORIGIN ?? "https://chika-hyakkei.github.io")) return text({ error: "このサイトからのみ送信できます。" }, 403, headers);

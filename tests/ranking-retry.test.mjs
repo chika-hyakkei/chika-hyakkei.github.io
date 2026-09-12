@@ -21,7 +21,7 @@ test("keeps a failed ranking submission and retries it without creating a new id
 
   const sentBodies = [];
   globalThis.fetch = async (_url, init) => { sentBodies.push(JSON.parse(init.body)); return new Response(JSON.stringify({ entryId: "77" }), { status: 200, headers: { "content-type": "application/json" } }); };
-  assert.deepEqual(await flushPendingRankings(), { sent: 1, remaining: 0 });
+  assert.deepEqual(await flushPendingRankings(), { sent: 1, remaining: 0, rejected: 0 });
   assert.equal(sentBodies[0].submissionId, submission.submissionId);
   assert.deepEqual(JSON.parse(localStorage.getItem(PENDING_RANKING_KEY)), []);
 });
