@@ -14,6 +14,8 @@
 npm install
 npm run dev
 npm test
+npm run typecheck
+npm run test:balance
 ```
 
 GitHub Pages向けの静的出力は `npm run build:pages` で `site/` に生成します。
